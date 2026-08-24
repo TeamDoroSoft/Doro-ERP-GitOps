@@ -96,6 +96,7 @@ Edge에는 서비스 전용 민감값이 없으며 방향별 HMAC만 주입한�
 | Secret 이름 뒤 경로 | JSON Key | 읽는 서비스 |
 |---|---|---|
 | `hmac/edge-to-store-access` | `DORO_HMAC_EDGE_TO_STORE_ACCESS_SECRET` | Edge, Store Access |
+| `hmac/edge-to-store-access-admin` | `DORO_HMAC_EDGE_TO_STORE_ACCESS_ADMIN_SECRET` | Edge, Store Access |
 | `hmac/edge-to-audit` | `DORO_HMAC_EDGE_TO_AUDIT_SECRET` | Edge, Audit |
 | `hmac/edge-to-payment` | `DORO_HMAC_EDGE_TO_PAYMENT_SECRET` | Edge, Payment |
 | `hmac/edge-to-commerce` | `DORO_HMAC_EDGE_TO_COMMERCE_SECRET` | Edge, Commerce |
