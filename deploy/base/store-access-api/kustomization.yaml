@@ -17,3 +17,4 @@ configMapGenerator:
       - AWS_REGION=ap-northeast-2
       - STORE_ACCESS_PORT=8081
       - STORE_ACCESS_AUDIT_OUTBOX_ENABLED=false
+      - STORE_ACCESS_EDGE_PUBLIC_HMAC_ENABLED=true

@@ -19,3 +19,4 @@ configMapGenerator:
       - QUEUE_ORDER_EVENTS_ENABLED=false
       - QUEUE_AUDIT_OUTBOX_ENABLED=false
       - QUEUE_INTERNAL_FULFILLMENT_ENABLED=false
+      - QUEUE_EDGE_HMAC_ENABLED=true

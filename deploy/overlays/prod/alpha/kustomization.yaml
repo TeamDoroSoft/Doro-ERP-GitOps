@@ -70,6 +70,9 @@ patches:
         path: /data/COMMERCE_INTERNAL_BASE_URL
         value: http://commerce-api.doro-alpha.svc.cluster.local:8082
       - op: add
+        path: /data/QUEUE_INTERNAL_BASE_URL
+        value: http://queue-api.doro-alpha.svc.cluster.local:8084
+      - op: add
         path: /data/EDGE_ALLOW_CLUSTER_SERVICE_HTTP
         value: "true"
   - target:
@@ -100,6 +103,9 @@ patches:
       - op: add
         path: /data/STORE_ACCESS_AUDIT_STANDARD_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
+      - op: replace
+        path: /data/STORE_ACCESS_EDGE_PUBLIC_HMAC_ENABLED
+        value: "true"
   - target:
       kind: ConfigMap
       name: commerce-api-runtime
@@ -166,6 +172,9 @@ patches:
       - op: add
         path: /data/QUEUE_AUDIT_OUTBOX_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
+      - op: replace
+        path: /data/QUEUE_EDGE_HMAC_ENABLED
+        value: "true"
   - target:
       kind: ConfigMap
       name: audit-api-runtime

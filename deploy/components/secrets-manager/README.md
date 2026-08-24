@@ -99,6 +99,7 @@ Edge에는 서비스 전용 민감값이 없으며 방향별 HMAC만 주입한�
 | `hmac/edge-to-audit` | `DORO_HMAC_EDGE_TO_AUDIT_SECRET` | Edge, Audit |
 | `hmac/edge-to-payment` | `DORO_HMAC_EDGE_TO_PAYMENT_SECRET` | Edge, Payment |
 | `hmac/edge-to-commerce` | `DORO_HMAC_EDGE_TO_COMMERCE_SECRET` | Edge, Commerce |
+| `hmac/edge-to-queue` | `DORO_HMAC_EDGE_TO_QUEUE_SECRET` | Edge, Queue |
 | `hmac/commerce-to-store-access` | `DORO_HMAC_COMMERCE_TO_STORE_ACCESS_SECRET` | Commerce, Store Access |
 | `hmac/store-access-to-commerce` | `DORO_HMAC_STORE_ACCESS_TO_COMMERCE_SECRET` | Store Access, Commerce |
 | `hmac/payment-to-commerce` | `DORO_HMAC_PAYMENT_TO_COMMERCE_SECRET` | Payment, Commerce |
