@@ -104,7 +104,7 @@ awk \
 
 mv "${TEMP_FILE}" "${OVERLAY_FILE}"
 
-kubectl kustomize "${OVERLAY_DIRECTORY}" >/prod/null
+kubectl kustomize "${OVERLAY_DIRECTORY}" >/dev/null
 
 rm -f "${BACKUP_FILE}"
 trap - EXIT
