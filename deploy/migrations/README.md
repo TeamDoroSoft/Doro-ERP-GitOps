@@ -32,7 +32,7 @@ Runtime Pod에는 `SPRING_FLYWAY_ENABLED=false`가 주입되고, 각 Migration J
 
 ## Migration Image Build
 
-Infra 저장소의 Dockerfile을 사용하되 Build Context는 Service 저장소 루트로 지정한다.
+GitOps 저장소의 Dockerfile을 사용하되 Build Context는 Service 저장소 루트로 지정한다.
 Flyway Image Version은 Service가 사용하는 `12.4.0`과 맞춘다. 각 Image는 해당 서비스의
 `db/migration` 디렉터리만 포함한다.
 
@@ -49,7 +49,7 @@ aws ecr get-login-password --region "${AWS_REGION}" \
 
 for service in store-access commerce payment queue; do
   docker build \
-    --file ../Doro-ERP-Infra/deploy/migrations/Dockerfile \
+    --file ../Doro-ERP-GitOps/deploy/migrations/Dockerfile \
     --build-arg "MIGRATION_SOURCE=apps/${service}-api/src/main/resources/db/migration" \
     --tag "${ECR_REGISTRY}/doro-erp-${service}:${MIGRATION_TAG}" \
     .
@@ -69,7 +69,7 @@ ECR Repository는 Immutable Tag를 사용하므로 같은 Tag를 덮어쓰지 �
 5. Migration Overlay만 먼저 적용한다.
 
 ```bash
-cd ~/Doro-ERP-Infra
+cd ~/Doro-ERP-GitOps
 kubectl kustomize deploy/migrations/prod-alpha
 kubectl apply -k deploy/migrations/prod-alpha
 
