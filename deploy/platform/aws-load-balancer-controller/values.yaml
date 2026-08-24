@@ -1,0 +1,16 @@
+clusterName: doro-erp-prod
+region: ap-northeast-2
+
+replicaCount: 2
+
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller
+
+enableShield: false
+enableWaf: false
+enableWafv2: false
+
+controllerConfig:
+  featureGates:
+    ALBGatewayAPI: true

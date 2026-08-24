@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+spec:
+  template:
+    spec:
+      serviceAccountName: payment-api
+      containers:
+        - name: payment-api
+          envFrom:
+            - configMapRef:
+                name: payment-api-runtime
+            - secretRef:
+                name: doro-erp-payment-runtime
+          volumeMounts:
+            - name: runtime-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+      volumes:
+        - name: runtime-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: payment-api

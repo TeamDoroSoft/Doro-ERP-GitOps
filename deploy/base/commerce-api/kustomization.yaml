@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - service-account.yaml
+  - deployment.yaml
+  - service.yaml
+  - availability.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app.kubernetes.io/name: commerce-api
+    app.kubernetes.io/part-of: doro-erp
+configMapGenerator:
+  - name: commerce-api-runtime
+    literals:
+      - SPRING_PROFILES_ACTIVE=prod
+      - AWS_REGION=ap-northeast-2
+      - COMMERCE_PORT=8082
+      - COMMERCE_PAYMENT_ELIGIBILITY_PROVIDER_ENABLED=false
+      - COMMERCE_PAYMENT_EVENTS_ENABLED=false
+      - COMMERCE_QUEUE_OUTBOX_ENABLED=false
+      - COMMERCE_AUDIT_OUTBOX_ENABLED=false

@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-api
+spec:
+  template:
+    spec:
+      serviceAccountName: edge-api
+      containers:
+        - name: edge-api
+          envFrom:
+            - configMapRef:
+                name: edge-api-runtime
+            - secretRef:
+                name: doro-erp-edge-runtime
+          volumeMounts:
+            - name: runtime-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+      volumes:
+        - name: runtime-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: edge-api

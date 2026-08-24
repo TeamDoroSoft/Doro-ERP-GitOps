@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - service-account.yaml
+  - deployment.yaml
+  - service.yaml
+  - availability.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app.kubernetes.io/name: payment-api
+    app.kubernetes.io/part-of: doro-erp
+configMapGenerator:
+  - name: payment-api-runtime
+    literals:
+      - SPRING_PROFILES_ACTIVE=prod
+      - AWS_REGION=ap-northeast-2
+      - PAYMENT_PORT=8083
+      - PAYMENT_COMMERCE_ELIGIBILITY_ENABLED=false
+      - PAYMENT_OUTBOX_ENABLED=false

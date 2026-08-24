@@ -1,0 +1,30 @@
+autoDiscovery:
+  clusterName: doro-erp-prod
+
+awsRegion: ap-northeast-2
+cloudProvider: aws
+
+image:
+  repository: registry.k8s.io/autoscaling/cluster-autoscaler
+  tag: v1.35.0
+
+rbac:
+  serviceAccount:
+    create: true
+    name: cluster-autoscaler
+
+replicaCount: 1
+priorityClassName: system-cluster-critical
+
+extraArgs:
+  expander: least-waste
+  scale-down-delay-after-add: 10m
+  scale-down-unneeded-time: 10m
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 300Mi
+  limits:
+    cpu: 200m
+    memory: 600Mi

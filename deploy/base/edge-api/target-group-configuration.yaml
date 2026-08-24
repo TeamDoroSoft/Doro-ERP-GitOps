@@ -1,0 +1,25 @@
+apiVersion: gateway.k8s.aws/v1
+kind: TargetGroupConfiguration
+metadata:
+  name: edge-api-tgconfig
+  labels:
+    app.kubernetes.io/name: edge-api
+    app.kubernetes.io/part-of: doro-erp
+spec:
+  targetReference:
+    group: ""
+    kind: Service
+    name: edge-api
+  defaultConfiguration:
+    targetType: ip
+    protocol: HTTP
+    protocolVersion: HTTP1
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPort: "8080"
+      healthCheckPath: /actuator/health/readiness
+      matcher:
+        httpCode: "200"
+    tags:
+      Project: Doro-ERP
+      ManagedBy: aws-load-balancer-controller

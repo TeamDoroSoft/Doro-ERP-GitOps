@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+namespace: doro-alpha
+resources:
+  - secret-provider-classes.yaml
+patches:
+  - path: patches/edge-api.yaml
+  - path: patches/store-access-api.yaml
+  - path: patches/commerce-api.yaml
+  - path: patches/payment-api.yaml
+  - path: patches/queue-api.yaml
+  - path: patches/audit-api.yaml

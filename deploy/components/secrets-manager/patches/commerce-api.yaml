@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: commerce-api
+spec:
+  template:
+    spec:
+      serviceAccountName: commerce-api
+      containers:
+        - name: commerce-api
+          envFrom:
+            - configMapRef:
+                name: commerce-api-runtime
+            - secretRef:
+                name: doro-erp-commerce-runtime
+          volumeMounts:
+            - name: runtime-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+      volumes:
+        - name: runtime-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: commerce-api

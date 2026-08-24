@@ -1,0 +1,216 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: store-access-db-migration
+  labels:
+    app.kubernetes.io/name: store-access-db-migration
+    app.kubernetes.io/part-of: doro-erp
+    app.kubernetes.io/component: database-migration
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: store-access-db-migration
+        app.kubernetes.io/part-of: doro-erp
+        app.kubernetes.io/component: database-migration
+    spec:
+      serviceAccountName: store-access-migration
+      restartPolicy: Never
+      enableServiceLinks: false
+      securityContext: &podSecurityContext
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flyway
+          image: doro-erp-store-access-migration:unconfigured
+          imagePullPolicy: IfNotPresent
+          args: &flywayArgs
+            - -connectRetries=60
+            - -validateMigrationNaming=true
+            - migrate
+          env:
+            - name: FLYWAY_URL
+              value: jdbc:postgresql://doro-erp-prod-postgres.cnqmcq6uwqa3.ap-northeast-2.rds.amazonaws.com:5432/store_access_db?sslmode=require
+            - name: FLYWAY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: doro-erp-store-access-migration
+                  key: DB_MIGRATION_USERNAME
+            - name: FLYWAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: doro-erp-store-access-migration
+                  key: DB_MIGRATION_PASSWORD
+          resources: &migrationResources
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext: &containerSecurityContext
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: runtime-secrets, mountPath: /mnt/secrets-store, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: runtime-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes: { secretProviderClass: store-access-migration }
+        - name: tmp
+          emptyDir: { sizeLimit: 128Mi }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: commerce-db-migration
+  labels: { app.kubernetes.io/name: commerce-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: commerce-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
+    spec:
+      serviceAccountName: commerce-migration
+      restartPolicy: Never
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flyway
+          image: doro-erp-commerce-migration:unconfigured
+          imagePullPolicy: IfNotPresent
+          args:
+            - -connectRetries=60
+            - -validateMigrationNaming=true
+            - migrate
+          env:
+            - { name: FLYWAY_URL, value: "jdbc:postgresql://doro-erp-prod-postgres.cnqmcq6uwqa3.ap-northeast-2.rds.amazonaws.com:5432/commerce_db?sslmode=require" }
+            - name: FLYWAY_USER
+              valueFrom: { secretKeyRef: { name: doro-erp-commerce-migration, key: DB_MIGRATION_USERNAME } }
+            - name: FLYWAY_PASSWORD
+              valueFrom: { secretKeyRef: { name: doro-erp-commerce-migration, key: DB_MIGRATION_PASSWORD } }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: runtime-secrets, mountPath: /mnt/secrets-store, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: runtime-secrets
+          csi: { driver: secrets-store.csi.k8s.io, readOnly: true, volumeAttributes: { secretProviderClass: commerce-migration } }
+        - { name: tmp, emptyDir: { sizeLimit: 128Mi } }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: payment-db-migration
+  labels: { app.kubernetes.io/name: payment-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: payment-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
+    spec:
+      serviceAccountName: payment-migration
+      restartPolicy: Never
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flyway
+          image: doro-erp-payment-migration:unconfigured
+          imagePullPolicy: IfNotPresent
+          args:
+            - -connectRetries=60
+            - -validateMigrationNaming=true
+            - migrate
+          env:
+            - { name: FLYWAY_URL, value: "jdbc:postgresql://doro-erp-prod-postgres.cnqmcq6uwqa3.ap-northeast-2.rds.amazonaws.com:5432/payment_db?sslmode=require" }
+            - name: FLYWAY_USER
+              valueFrom: { secretKeyRef: { name: doro-erp-payment-migration, key: DB_MIGRATION_USERNAME } }
+            - name: FLYWAY_PASSWORD
+              valueFrom: { secretKeyRef: { name: doro-erp-payment-migration, key: DB_MIGRATION_PASSWORD } }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: runtime-secrets, mountPath: /mnt/secrets-store, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: runtime-secrets
+          csi: { driver: secrets-store.csi.k8s.io, readOnly: true, volumeAttributes: { secretProviderClass: payment-migration } }
+        - { name: tmp, emptyDir: { sizeLimit: 128Mi } }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: queue-db-migration
+  labels: { app.kubernetes.io/name: queue-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: queue-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
+    spec:
+      serviceAccountName: queue-migration
+      restartPolicy: Never
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flyway
+          image: doro-erp-queue-migration:unconfigured
+          imagePullPolicy: IfNotPresent
+          args:
+            - -connectRetries=60
+            - -validateMigrationNaming=true
+            - migrate
+          env:
+            - { name: FLYWAY_URL, value: "jdbc:postgresql://doro-erp-prod-postgres.cnqmcq6uwqa3.ap-northeast-2.rds.amazonaws.com:5432/queue_db?sslmode=require" }
+            - name: FLYWAY_USER
+              valueFrom: { secretKeyRef: { name: doro-erp-queue-migration, key: DB_MIGRATION_USERNAME } }
+            - name: FLYWAY_PASSWORD
+              valueFrom: { secretKeyRef: { name: doro-erp-queue-migration, key: DB_MIGRATION_PASSWORD } }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: runtime-secrets, mountPath: /mnt/secrets-store, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: runtime-secrets
+          csi: { driver: secrets-store.csi.k8s.io, readOnly: true, volumeAttributes: { secretProviderClass: queue-migration } }
+        - { name: tmp, emptyDir: { sizeLimit: 128Mi } }

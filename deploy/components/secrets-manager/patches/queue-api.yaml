@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue-api
+spec:
+  template:
+    spec:
+      serviceAccountName: queue-api
+      containers:
+        - name: queue-api
+          envFrom:
+            - configMapRef:
+                name: queue-api-runtime
+            - secretRef:
+                name: doro-erp-queue-runtime
+          volumeMounts:
+            - name: runtime-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+      volumes:
+        - name: runtime-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: queue-api

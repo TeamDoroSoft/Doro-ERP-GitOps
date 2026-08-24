@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - service-account.yaml
+  - deployment.yaml
+  - service.yaml
+  - availability.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app.kubernetes.io/name: audit-api
+    app.kubernetes.io/part-of: doro-erp
+configMapGenerator:
+  - name: audit-api-runtime
+    literals:
+      - SPRING_PROFILES_ACTIVE=prod
+      - AWS_REGION=ap-northeast-2
+      - AUDIT_PORT=8085
+      - AUDIT_DEPLOYMENT_ENVIRONMENT=prod
+      - AUDIT_CELL_ID=alpha
+      - AUDIT_SQS_LISTENER_ENABLED=false
+      - AUDIT_DLQ_MONITORING_ENABLED=false
