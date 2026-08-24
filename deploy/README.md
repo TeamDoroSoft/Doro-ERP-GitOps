@@ -203,7 +203,7 @@ NetworkPolicy는 Job 실행 시점과 DB Endpoint가 확정된 뒤 그 Kustomiza
   0123456789abcdef0123456789abcdef01234567 \
   sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 git diff -- deploy/overlays/prod/alpha/kustomization.yaml
-kubectl kustomize deploy/overlays/prod/alpha >/prod/null
+kubectl kustomize deploy/overlays/prod/alpha >/dev/null
 ```
 
 Overlay의 `images` 항목은 다음 형태를 사용한다.
