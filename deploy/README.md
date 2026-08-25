@@ -36,7 +36,11 @@ deploy/
 
 Provider Admin Base는 Front 저장소의 Nginx Image를 Deployment와 ClusterIP Service로 실행한다.
 외부 HTTPRoute·LoadBalancer·DNS는 만들지 않으며 SSM 관리 경로와 `kubectl port-forward`로만
-접근한다. `/api/` 요청은 Admin Nginx가 같은 Namespace의 `edge-api:8080`으로 전달한다.
+접근한다. 현재 Public Edge는 `prod` Profile만 사용해 Provider Admin API가 비활성이고, 해당
+Runtime에 `admin` Profile을 추가하면 Public HTTPRoute 경계와 섞인다. 따라서 Admin Nginx는
+`/api/`를 Public Edge로 전달하지 않고 `PROVIDER_ADMIN_API_NOT_CONFIGURED` 503으로 Fail-Closed한다.
+OIDC Secret·Redirect URI·Expected Origin이 확정된 Private Admin Edge Deployment를 별도로 추가한
+뒤에만 Admin Nginx Proxy와 Admin→Private Edge NetworkPolicy를 연다.
 
 Prod Alpha Overlay는 여섯 Base를 `doro-alpha` Namespace에 배치하고
 [`secrets-manager`](components/secrets-manager/README.md) Component를 결합한다.
@@ -47,7 +51,9 @@ Manifest 구조, Runtime 설정, Secrets Manager 연결과 PostgreSQL Migration 
 EKS에 적용할 Image Tag는 아직 완성되지 않았다. Prod Alpha NetworkPolicy는 포함되어 있지만
 실제 CNI Enforcement와 Packet Test 전에는 격리 완료로 판정하지 않는다.
 
-- Image Digest는 의도적으로 `sha256:unconfigured`다. ECR에 Push된 전체 Git SHA Tag와 일치하는 Digest로 교체해야 한다.
+- Provider Admin Image Digest는 최초 Release 전까지 의도적으로 `sha256:unconfigured`다. 이 값이
+  남아 있는 동안 Admin Base는 Overlay에 포함되지 않는다. ECR에 Push된 전체 Front Git SHA Tag와
+  일치하는 Digest를 검증한 Release Script만 Admin Base를 활성화한다.
 - Prod Alpha Overlay에는 RDS PostgreSQL URL, Redis Endpoint와 SQS Queue 값이 구성되어 있다. MongoDB URI는 Audit Secret에서 주입한다.
 - 목표 경계는 CloudFront와 Internal ALB에서 각각 TLS를 종료하고, ALB 뒤 ClusterIP 구간은 HMAC과 Kubernetes Service DNS로 제한한 HTTP를 사용하는 구조다. 각 Runtime의 `*_ALLOW_CLUSTER_SERVICE_HTTP=true` opt-in 없이는 기동 시 Fail-Closed한다.
 - CloudFront VPC Origin은 전용 `origin.doro.minseok.click` 이름과 Regional ACM 인증서를 사용해 Gateway API가 생성한 내부 ALB의 HTTPS 443 Listener에 연결한다. ALB에서 TLS를 종료한 뒤 Edge ClusterIP Target에는 HTTP로 전달한다.
@@ -106,6 +112,7 @@ Cluster 접속 없이 다음 명령으로 Base와 Prod Alpha Overlay가 정상 �
 
 ```bash
 kubectl kustomize deploy/base
+kubectl kustomize deploy/base/provider-admin
 kubectl kustomize deploy/overlays/prod/alpha
 ```
 
@@ -125,6 +132,11 @@ Prod Alpha 결과에는 다음이 포함되어야 한다.
 - 각 Deployment의 Zone·Hostname Topology Spread Constraint
 
 Secret 원문은 렌더링 결과나 Git에 포함되지 않아야 한다.
+
+Provider Admin Base는 별도로 렌더링해 Deployment·ClusterIP Service·ConfigMap·HPA·PDB와
+`doro-erp-frontend:unconfigured` 논리 Image 이름을 검증한다. Prod Alpha Overlay에는 최초로
+검증된 Admin Digest를 기록하기 전까지 Deployment가 포함되지 않아야 한다. 첫 Release 이후에는
+Admin Deployment의 실제 Digest, Replica 2개, Hostname Spread, HPA와 PDB를 추가로 확인한다.
 
 ## Replica·HPA·PDB와 Topology Spread
 
@@ -196,6 +208,11 @@ NetworkPolicy는 Job 실행 시점과 DB Endpoint가 확정된 뒤 그 Kustomiza
 짧은 기본 허용 구간이 있다. Cluster 핵심 Add-on까지 필요한 Egress 정책을 갖춘 뒤에만
 `NETWORK_POLICY_ENFORCING_MODE=strict` 전환을 별도 Rollout으로 검토한다.
 
+Provider Admin은 Ingress·Egress 모두 기본 거부하고 별도 Pod CIDR/VPC CIDR 허용을 만들지 않는다.
+EKS API Server와 Kubelet을 경유하는 `kubectl port-forward`만 사용하며 Service는 ClusterIP로
+유지한다. VPC CNI의 Node/Kubelet Traffic 예외를 실제 Cluster에서 확인하기 전에는 SSM 접근을
+검증 완료로 판정하지 않는다.
+
 ## Release 값 반영
 
 Service Image 게시 Workflow는 검증된 ECR Digest를 GitOps Release PR에 기록한다. Script는
@@ -224,6 +241,11 @@ images:
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-payment
     digest: sha256:ECR_DIGEST # source-revision: FULL_GIT_SHA
 ```
+
+Provider Admin은 AWS 계정 `727646470302`, Region `ap-northeast-2`의 ECR Repository
+`doro-erp-frontend`를 사용한다. 최초 Release 전 Overlay의 `sha256:unconfigured`는 실제 Digest로
+간주하지 않으며 수동으로 Base만 활성화하지 않는다. 최초 Release Script가 실제 ECR Digest를
+검증하고 Base 포함과 Digest 교체를 같은 변경으로 수행한다.
 
 변경을 Commit한 뒤 Migration이 필요한 서비스는 전용 Job을 먼저 완료하고 PR의 렌더링 결과를
 검토한다. 병합 뒤 Argo CD가 전체 Overlay를 Sync해도 Pod Template이 바뀐 Deployment만

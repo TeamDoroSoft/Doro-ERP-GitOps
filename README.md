@@ -8,6 +8,7 @@ Secrets Manager 경로 계약을 함께 유지한다.
 
 ```bash
 kubectl kustomize deploy/base
+kubectl kustomize deploy/base/provider-admin
 kubectl kustomize deploy/overlays/prod/alpha
 kubectl kustomize deploy/migrations/prod-alpha
 bash -n deploy/scripts/record-prod-alpha-image.sh
@@ -31,4 +32,7 @@ kubectl get application doro-erp-prod-alpha -n argocd
 Provider Admin은 Public Gateway Route를 만들지 않고 EKS의 ClusterIP Service로만 실행한다.
 Front Image 게시 Workflow가 Admin ECR Digest와 Base 포함을 GitOps PR에 함께 기록하므로 최초
 이미지가 없는 상태에서 placeholder Deployment가 EKS에 생성되지 않는다. 승인된 PR이 병합된
-뒤에는 SSM 관리 경로에서 `kubectl port-forward service/provider-admin 18080:8080`으로 접근한다.
+뒤에는 SSM 관리 경로에서
+`kubectl -n doro-alpha port-forward service/provider-admin 18080:8080`으로 접근한다. 현재
+Provider Admin API는 Public Edge와 분리된 Private Admin Edge·OIDC Secret이 준비되지 않아
+`/api/`가 의도적으로 503을 반환한다. 정적 Page 배포만으로 Admin 기능 완료로 판정하지 않는다.

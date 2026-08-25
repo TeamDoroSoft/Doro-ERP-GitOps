@@ -18,6 +18,14 @@ patches:
       - op: remove
         path: /spec/template/spec/topologySpreadConstraints/0
   - target:
+      kind: Deployment
+      name: provider-admin
+    patch: |-
+      # Provider Admin uses the same single-AZ scheduling exception as the six
+      # Service runtimes once its first verified image release activates it.
+      - op: remove
+        path: /spec/template/spec/topologySpreadConstraints/0
+  - target:
       kind: ConfigMap
       labelSelector: app.kubernetes.io/part-of=doro-erp
     patch: |-
@@ -204,3 +212,8 @@ images:
   - name: doro-erp-audit
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-audit
     digest: sha256:189e063b7f7c9aa9b7cfe2195e600578d4aab672854d08182456afa684a0d8c6 # source-revision: 7e3af746a875982a5fd733c848bf769b945123c3
+  # The first Admin release script validates and replaces both placeholders
+  # before it adds ../../../base/provider-admin to this overlay.
+  - name: doro-erp-frontend
+    newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-frontend
+    digest: sha256:unconfigured # source-revision: unconfigured
