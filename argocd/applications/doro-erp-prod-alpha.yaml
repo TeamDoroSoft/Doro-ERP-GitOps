@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: doro-erp-prod-alpha
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TeamDoroSoft/Doro-ERP-GitOps.git
+    targetRevision: main
+    path: deploy/overlays/prod/alpha
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: doro-alpha
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+      allowEmpty: false
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m
