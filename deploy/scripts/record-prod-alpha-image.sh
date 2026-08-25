@@ -110,4 +110,4 @@ rm -f "${BACKUP_FILE}"
 trap - EXIT
 
 echo "Recorded ${REPOSITORY}@${IMAGE_DIGEST} from ${SOURCE_REVISION}."
-echo "Review and commit the Infra diff before applying the Prod Alpha overlay."
+echo "Review and commit the GitOps diff before applying the Prod Alpha overlay."

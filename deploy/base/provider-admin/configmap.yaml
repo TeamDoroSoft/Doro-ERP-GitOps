@@ -26,10 +26,10 @@ data:
             return 200 "ok\n";
         }
 
-        # Provider Admin Edge requires the Spring "admin" profile and its own
-        # private runtime/credentials. Until that boundary is deployed, keep API
-        # calls fail-closed instead of proxying them to the public Edge runtime.
         location /api/ {
+            # Production browser API traffic is routed by the dedicated ALB
+            # directly to provider-admin-edge-api. The static frontend Pod is
+            # not an application proxy and keeps all API requests fail-closed.
             default_type application/problem+json;
             return 503 '{"type":"about:blank","title":"Provider Admin API unavailable","status":503,"code":"PROVIDER_ADMIN_API_NOT_CONFIGURED"}';
         }

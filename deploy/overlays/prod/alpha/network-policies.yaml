@@ -176,6 +176,16 @@ spec:
       ports:
         - port: 8082
           protocol: TCP
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: doro-provider-admin
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: provider-admin-edge-api
+      ports:
+        - port: 8081
+          protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

@@ -1,0 +1,144 @@
+apiVersion: gateway.k8s.aws/v1
+kind: LoadBalancerConfiguration
+metadata:
+  name: provider-admin-alb-config
+  labels:
+    app.kubernetes.io/name: provider-admin-gateway
+    app.kubernetes.io/part-of: doro-erp-admin
+spec:
+  loadBalancerName: doro-erp-prod-provider-admin
+  scheme: internal
+  ipAddressType: ipv4
+  loadBalancerSubnets:
+    - identifier: doro-erp-prod-app-a
+    - identifier: doro-erp-prod-app-c
+  securityGroups:
+    - doro-erp-prod-provider-admin-alb
+  manageBackendSecurityGroupRules: true
+  listenerConfigurations:
+    - protocolPort: HTTPS:443
+      sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+  tags:
+    Project: Doro-ERP
+    Environment: prod
+    Cell: alpha
+    Team: team2
+    ManagedBy: aws-load-balancer-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: provider-admin-gateway
+  labels:
+    app.kubernetes.io/name: provider-admin-gateway
+    app.kubernetes.io/part-of: doro-erp-admin
+spec:
+  gatewayClassName: doro-alb
+  infrastructure:
+    parametersRef:
+      group: gateway.k8s.aws
+      kind: LoadBalancerConfiguration
+      name: provider-admin-alb-config
+  listeners:
+    - name: https
+      hostname: admin.doro.minseok.click
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: provider-admin-route
+  labels:
+    app.kubernetes.io/name: provider-admin-route
+    app.kubernetes.io/part-of: doro-erp-admin
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: provider-admin-gateway
+      sectionName: https
+  hostnames:
+    - admin.doro.minseok.click
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/provider
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: provider-admin-edge-api
+          port: 8080
+          weight: 1
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: provider-admin
+          port: 8080
+          weight: 1
+---
+apiVersion: gateway.k8s.aws/v1
+kind: TargetGroupConfiguration
+metadata:
+  name: provider-admin-tgconfig
+  labels:
+    app.kubernetes.io/name: provider-admin
+    app.kubernetes.io/part-of: doro-erp-admin
+spec:
+  targetReference:
+    group: ""
+    kind: Service
+    name: provider-admin
+  defaultConfiguration:
+    targetType: ip
+    protocol: HTTP
+    protocolVersion: HTTP1
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPort: "8080"
+      healthCheckPath: /healthz
+      matcher:
+        httpCode: "200"
+    tags:
+      Project: Doro-ERP
+      Environment: prod
+      Cell: alpha
+      Team: team2
+      ManagedBy: aws-load-balancer-controller
+---
+apiVersion: gateway.k8s.aws/v1
+kind: TargetGroupConfiguration
+metadata:
+  name: provider-admin-edge-api-tgconfig
+  labels:
+    app.kubernetes.io/name: provider-admin-edge-api
+    app.kubernetes.io/part-of: doro-erp-admin
+spec:
+  targetReference:
+    group: ""
+    kind: Service
+    name: provider-admin-edge-api
+  defaultConfiguration:
+    targetType: ip
+    protocol: HTTP
+    protocolVersion: HTTP1
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPort: "8080"
+      healthCheckPath: /actuator/health/readiness
+      matcher:
+        httpCode: "200"
+    tags:
+      Project: Doro-ERP
+      Environment: prod
+      Cell: alpha
+      Team: team2
+      ManagedBy: aws-load-balancer-controller

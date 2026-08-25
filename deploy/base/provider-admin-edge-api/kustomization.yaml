@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - service-account.yaml
+  - deployment.yaml
+  - service.yaml
+  - availability.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app.kubernetes.io/name: provider-admin-edge-api
+    app.kubernetes.io/part-of: doro-erp-admin
+configMapGenerator:
+  - name: provider-admin-edge-api-runtime
+    literals:
+      - SPRING_PROFILES_ACTIVE=prod,admin
+      - EDGE_PORT=8080
+      - ADMIN_STORE_ACCESS_INTERNAL_BASE_URL=http://store-access-api.doro-alpha.svc.cluster.local:8081
+      - ADMIN_STORE_ACCESS_ALLOW_CLUSTER_SERVICE_HTTP=true
+      - LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs
+      - LOGGING_STRUCTURED_ECS_SERVICE_ENVIRONMENT=prod-provider-admin
+      - LOGGING_STRUCTURED_JSON_ADD_CELL=alpha
+      - LOGGING_STRUCTURED_JSON_STACKTRACE_MAX_LENGTH=16384
