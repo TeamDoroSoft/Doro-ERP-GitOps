@@ -68,15 +68,8 @@ cleanup() {
 trap cleanup EXIT
 
 if ! grep -Fxq "${ADMIN_RESOURCE}" "${OVERLAY_FILE}"; then
-  awk -v admin_resource="${ADMIN_RESOURCE}" '
-    $0 == "  - ../../../base" {
-      print
-      print admin_resource
-      next
-    }
-    { print }
-  ' "${OVERLAY_FILE}" > "${TEMP_FILE}"
-  mv "${TEMP_FILE}" "${OVERLAY_FILE}"
+  echo "Provider Admin Base must remain part of the reviewed Prod Alpha topology." >&2
+  exit 1
 fi
 
 if grep -Fq "  - name: ${IMAGE_NAME}" "${OVERLAY_FILE}"; then

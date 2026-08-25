@@ -87,7 +87,31 @@ AWS Console
 }
 ```
 
-Edge에는 서비스 전용 민감값이 없으며 방향별 HMAC만 주입한다. Terraform이 만드는 `doro-erp/prod/alpha/edge` Container는 향후 Edge 전용 Secret을 위한 예약 공간이다.
+Public Edge에는 서비스 전용 민감값이 없으며 승인된 Public 방향별 HMAC만 주입한다. Terraform이
+만드는 `doro-erp/prod/alpha/edge` Container는 향후 Public Edge 전용 Secret을 위한 예약 공간이다.
+Public Edge는 Provider Admin OIDC·Session 값과 Admin HMAC을 읽지 않는다.
+
+### `doro-erp/prod/alpha/provider-admin-edge`
+
+```json
+{
+  "DORO_PROVIDER_ADMIN_OIDC_ISSUER": "",
+  "DORO_PROVIDER_ADMIN_OIDC_AUTHORIZATION_URI": "",
+  "DORO_PROVIDER_ADMIN_OIDC_TOKEN_URI": "",
+  "DORO_PROVIDER_ADMIN_OIDC_JWK_SET_URI": "",
+  "DORO_PROVIDER_ADMIN_OIDC_CLIENT_ID": "",
+  "DORO_PROVIDER_ADMIN_OIDC_CLIENT_SECRET": "",
+  "DORO_PROVIDER_ADMIN_OIDC_REDIRECT_URI": "https://admin.doro.minseok.click:8443/api/v1/provider/auth/callback",
+  "DORO_PROVIDER_ADMIN_ALLOWED_GROUP": "provider-admin",
+  "DORO_PROVIDER_ADMIN_SESSION_COOKIE_SECRET": "",
+  "DORO_PROVIDER_ADMIN_EXPECTED_ORIGIN": "https://admin.doro.minseok.click:8443"
+}
+```
+
+이 Secret과 `hmac/edge-to-store-access-admin`은 `doro-provider-admin` Namespace의
+`provider-admin-edge-api`만 읽는다. Store Access는 요청 검증을 위해 Admin HMAC만 별도로 읽는다.
+Session Cookie Secret과 Admin HMAC은 각각 독립적으로 `openssl rand -base64 32`를 실행해 만든
+정확히 32-byte Base64 값을 사용하고, 실제 값은 Git이나 Terraform State에 기록하지 않는다.
 
 ## 방향별 HMAC Secret
 
@@ -96,7 +120,7 @@ Edge에는 서비스 전용 민감값이 없으며 방향별 HMAC만 주입한�
 | Secret 이름 뒤 경로 | JSON Key | 읽는 서비스 |
 |---|---|---|
 | `hmac/edge-to-store-access` | `DORO_HMAC_EDGE_TO_STORE_ACCESS_SECRET` | Edge, Store Access |
-| `hmac/edge-to-store-access-admin` | `DORO_HMAC_EDGE_TO_STORE_ACCESS_ADMIN_SECRET` | Edge, Store Access |
+| `hmac/edge-to-store-access-admin` | `DORO_HMAC_EDGE_TO_STORE_ACCESS_ADMIN_SECRET` | Provider Admin Edge, Store Access |
 | `hmac/edge-to-audit` | `DORO_HMAC_EDGE_TO_AUDIT_SECRET` | Edge, Audit |
 | `hmac/edge-to-payment` | `DORO_HMAC_EDGE_TO_PAYMENT_SECRET` | Edge, Payment |
 | `hmac/edge-to-commerce` | `DORO_HMAC_EDGE_TO_COMMERCE_SECRET` | Edge, Commerce |
@@ -134,8 +158,11 @@ Component는 다음 이름을 전제로 한다.
 | `payment-api` | `doro-erp-payment-runtime` |
 | `queue-api` | `doro-erp-queue-runtime` |
 | `audit-api` | `doro-erp-audit-runtime` |
+| `provider-admin-edge-api` | `doro-erp-provider-admin-edge-runtime` |
 
-Terraform의 Pod Identity Association도 위 ServiceAccount 이름과 `doro-alpha` Namespace를 사용한다. 이름을 바꾸면 Terraform과 Patch를 함께 변경한다.
+Public Runtime의 Pod Identity Association은 위 ServiceAccount 이름과 `doro-alpha` Namespace를
+사용한다. Provider Admin Edge는 `doro-provider-admin/provider-admin-edge-api` 전용 Association을
+사용한다. 이름을 바꾸면 Terraform과 Manifest를 함께 변경한다.
 
 ## 검증
 
@@ -152,12 +179,15 @@ kubectl get secret -n doro-alpha \
   doro-erp-payment-runtime \
   doro-erp-queue-runtime \
   doro-erp-audit-runtime
+kubectl get secretproviderclass provider-admin-edge-api -n doro-provider-admin
+kubectl get secret doro-erp-provider-admin-edge-runtime -n doro-provider-admin
 ```
 
 Pod가 Secret Volume을 Mount해야 Kubernetes Secret 동기화가 시작된다. Pod가 `CreateContainerConfigError` 또는 `FailedMount`이면 다음을 확인한다.
 
 ```bash
 kubectl describe pod -n doro-alpha POD_NAME
+kubectl describe pod -n doro-provider-admin POD_NAME
 kubectl logs -n aws-secrets-manager \
   -l app.kubernetes.io/name=secrets-store-csi-driver-provider-aws
 ```
@@ -171,4 +201,6 @@ CSI Rotation Poll Interval은 2분이다. Mounted File과 동기화된 Kubernete
 ```bash
 kubectl rollout restart deployment/SERVICE-api -n doro-alpha
 kubectl rollout status deployment/SERVICE-api -n doro-alpha
+kubectl rollout restart deployment/provider-admin-edge-api -n doro-provider-admin
+kubectl rollout status deployment/provider-admin-edge-api -n doro-provider-admin
 ```

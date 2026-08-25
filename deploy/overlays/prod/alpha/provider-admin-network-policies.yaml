@@ -2,10 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-provider-admin
+  labels:
+    app.kubernetes.io/part-of: doro-erp-admin
 spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: provider-admin
+  podSelector: {}
   policyTypes:
     - Ingress
     - Egress
@@ -14,10 +14,12 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-provider-admin-dns
+  labels:
+    app.kubernetes.io/part-of: doro-erp-admin
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: provider-admin
+      app.kubernetes.io/name: provider-admin-edge-api
   policyTypes:
     - Egress
   egress:
@@ -37,18 +39,23 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-provider-admin-to-edge
+  name: allow-provider-admin-from-vpc-load-balancer
+  labels:
+    app.kubernetes.io/part-of: doro-erp-admin
 spec:
   podSelector:
-    matchLabels:
-      app.kubernetes.io/name: provider-admin
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - provider-admin
+          - provider-admin-edge-api
   policyTypes:
-    - Egress
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: edge-api
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.24.0.0/16
       ports:
         - port: 8080
           protocol: TCP
@@ -56,18 +63,67 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-edge-from-provider-admin
+  name: allow-provider-admin-edge-to-store-access
+  labels:
+    app.kubernetes.io/part-of: doro-erp-admin
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: edge-api
+      app.kubernetes.io/name: provider-admin-edge-api
   policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
             matchLabels:
-              app.kubernetes.io/name: provider-admin
+              kubernetes.io/metadata.name: doro-alpha
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: store-access-api
       ports:
-        - port: 8080
+        - port: 8081
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-provider-admin-edge-pod-identity-agent
+  labels:
+    app.kubernetes.io/part-of: doro-erp-admin
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: provider-admin-edge-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 169.254.170.23/32
+      ports:
+        - port: 80
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-provider-admin-edge-external-oidc
+  labels:
+    app.kubernetes.io/part-of: doro-erp-admin
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: provider-admin-edge-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.24.0.0/16
+              - 172.20.0.0/16
+              - 169.254.0.0/16
+      ports:
+        - port: 443
           protocol: TCP
