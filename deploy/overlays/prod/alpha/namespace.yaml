@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: doro-alpha
-  labels:
-    app.kubernetes.io/part-of: doro-erp
-    doro.erp/environment: prod
-    doro.erp/cell: alpha

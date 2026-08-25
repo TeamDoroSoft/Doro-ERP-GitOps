@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: doro-alpha
 resources:
   - ../../../base
-  - namespace.yaml
   - network-policies.yaml
   - gateway.yaml
 components:
