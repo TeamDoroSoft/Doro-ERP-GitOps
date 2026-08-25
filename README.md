@@ -11,7 +11,24 @@ kubectl kustomize deploy/base
 kubectl kustomize deploy/overlays/prod/alpha
 kubectl kustomize deploy/migrations/prod-alpha
 bash -n deploy/scripts/record-prod-alpha-image.sh
+bash -n deploy/scripts/record-prod-alpha-admin-image.sh
+kubectl apply --dry-run=client -f argocd/applications/doro-erp-prod-alpha.yaml
 ```
 
-현재 Argo CD Application/ApplicationSet은 아직 정의하지 않았다. 승인된 Image Digest를
-Git에 기록하고 수동 Kustomize 적용을 검증한 뒤 자동 동기화를 도입한다.
+[`doro-erp-prod-alpha`](argocd/applications/doro-erp-prod-alpha.yaml) Argo CD Application은
+GitOps `main`의 Prod Alpha Overlay를 추적하고 Auto-Sync와 Self-Heal을 사용한다. 자동 Prune은
+비활성화해 Git에서 Resource가 제거되더라도 별도 검토 없이 Cluster Resource를 삭제하지 않는다.
+Service Image 게시 Workflow는 승인된 ECR Digest를 기록하는 GitOps PR을 만들며, 사람이 해당
+PR을 검토해 병합한 뒤에만 Argo CD가 EKS Rollout을 시작한다.
+
+Application 설정을 Cluster에 반영하거나 복구할 때는 다음 명령을 사용한다.
+
+```bash
+kubectl apply -f argocd/applications/doro-erp-prod-alpha.yaml
+kubectl get application doro-erp-prod-alpha -n argocd
+```
+
+Provider Admin은 Public Gateway Route를 만들지 않고 EKS의 ClusterIP Service로만 실행한다.
+Front Image 게시 Workflow가 Admin ECR Digest와 Base 포함을 GitOps PR에 함께 기록하므로 최초
+이미지가 없는 상태에서 placeholder Deployment가 EKS에 생성되지 않는다. 승인된 PR이 병합된
+뒤에는 SSM 관리 경로에서 `kubectl port-forward service/provider-admin 18080:8080`으로 접근한다.

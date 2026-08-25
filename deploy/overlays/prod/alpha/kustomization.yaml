@@ -4,6 +4,7 @@ namespace: doro-alpha
 resources:
   - ../../../base
   - network-policies.yaml
+  - provider-admin-network-policies.yaml
   - gateway.yaml
 components:
   - ../../../components/secrets-manager

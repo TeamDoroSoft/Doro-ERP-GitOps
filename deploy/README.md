@@ -7,6 +7,7 @@
 ```text
 deploy/
 ├─ base/
+│  ├─ provider-admin/
 │  ├─ edge-api/
 │  ├─ store-access-api/
 │  ├─ commerce-api/
@@ -33,6 +34,10 @@ deploy/
 - `TargetGroupConfiguration`: Edge Target Group의 IP Target과 Readiness Health Check를 정의한다.
 - `ConfigMap`: Port, Region과 안전한 기본 Feature Flag를 환경 변수로 제공한다.
 
+Provider Admin Base는 Front 저장소의 Nginx Image를 Deployment와 ClusterIP Service로 실행한다.
+외부 HTTPRoute·LoadBalancer·DNS는 만들지 않으며 SSM 관리 경로와 `kubectl port-forward`로만
+접근한다. `/api/` 요청은 Admin Nginx가 같은 Namespace의 `edge-api:8080`으로 전달한다.
+
 Prod Alpha Overlay는 여섯 Base를 `doro-alpha` Namespace에 배치하고
 [`secrets-manager`](components/secrets-manager/README.md) Component를 결합한다.
 
@@ -46,7 +51,7 @@ EKS에 적용할 Image Tag는 아직 완성되지 않았다. Prod Alpha NetworkP
 - Prod Alpha Overlay에는 RDS PostgreSQL URL, Redis Endpoint와 SQS Queue 값이 구성되어 있다. MongoDB URI는 Audit Secret에서 주입한다.
 - 목표 경계는 CloudFront와 Internal ALB에서 각각 TLS를 종료하고, ALB 뒤 ClusterIP 구간은 HMAC과 Kubernetes Service DNS로 제한한 HTTP를 사용하는 구조다. 각 Runtime의 `*_ALLOW_CLUSTER_SERVICE_HTTP=true` opt-in 없이는 기동 시 Fail-Closed한다.
 - CloudFront VPC Origin은 전용 `origin.doro.minseok.click` 이름과 Regional ACM 인증서를 사용해 Gateway API가 생성한 내부 ALB의 HTTPS 443 Listener에 연결한다. ALB에서 TLS를 종료한 뒤 Edge ClusterIP Target에는 HTTP로 전달한다.
-- Argo CD Application은 아직 포함하지 않는다.
+- Argo CD Application은 [`../../argocd/applications/doro-erp-prod-alpha.yaml`](../../argocd/applications/doro-erp-prod-alpha.yaml)에 선언한다. GitOps PR 병합 뒤 Auto-Sync와 Self-Heal을 수행하고 자동 Prune은 하지 않는다.
 - PostgreSQL Flyway Migration Credential과 Runtime Credential은 분리되어 있다. 실제 Credential 입력과 Migration Image Push가 필요하다.
 
 Image Tag를 채우고 `deploy/migrations/README.md`의 네 Job이 모두 성공하기 전에
@@ -193,9 +198,14 @@ NetworkPolicy는 Job 실행 시점과 DB Endpoint가 확정된 뒤 그 Kustomiza
 
 ## Release 값 반영
 
-자동 CD를 도입하기 전까지 이미지는 검증된 ECR Digest를 Git에 기록하고 수동 적용한다. Script는
+Service Image 게시 Workflow는 검증된 ECR Digest를 GitOps Release PR에 기록한다. Script는
 전체 Git SHA Tag가 실제 ECR에서 입력 Digest를 가리키는지 확인한 뒤 대상 서비스 항목 하나만
-변경하며 Cluster에는 직접 적용하지 않는다.
+변경하며 Cluster에는 직접 적용하지 않는다. GitOps PR은 자동 병합하지 않으며 승인된 PR이
+`main`에 병합되면 Argo CD가 Prod Alpha Overlay를 자동 동기화한다.
+
+Front Provider Admin Workflow도 동일하게 `record-prod-alpha-admin-image.sh`를 실행해
+`doro-erp-frontend` Digest를 기록한다. 최초 Release에서는 Provider Admin Base를 Prod Alpha
+Overlay에 포함하는 변경도 같은 PR에 추가한다.
 
 ```bash
 ./deploy/scripts/record-prod-alpha-image.sh \
@@ -215,8 +225,8 @@ images:
     digest: sha256:ECR_DIGEST # source-revision: FULL_GIT_SHA
 ```
 
-변경을 Commit한 뒤 Migration이 필요한 서비스는 전용 Job을 먼저 완료하고 `kubectl diff -k`로
-검토한 뒤 Overlay를 Apply한다. 전체 Overlay를 Apply해도 Pod Template이 바뀐 Deployment만
+변경을 Commit한 뒤 Migration이 필요한 서비스는 전용 Job을 먼저 완료하고 PR의 렌더링 결과를
+검토한다. 병합 뒤 Argo CD가 전체 Overlay를 Sync해도 Pod Template이 바뀐 Deployment만
 Rollout한다. `kubectl rollout status`와 서비스 Smoke Test를 통과해야 Release가 완료된다.
 Rollback도 동일 Script에 이전 전체 Git SHA와 Digest를 전달해 Git에 기록한 뒤 다시 Apply한다.
 EKS Console이나 `kubectl set image`로만 변경해 Git과 Cluster 상태를 어긋나게 하지 않는다.
