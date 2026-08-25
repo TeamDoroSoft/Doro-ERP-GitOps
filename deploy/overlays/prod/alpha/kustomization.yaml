@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: doro-alpha
 resources:
   - ../../../base
+  - ../../../base/provider-admin
   - network-policies.yaml
   - provider-admin-network-policies.yaml
   - gateway.yaml
@@ -212,8 +213,6 @@ images:
   - name: doro-erp-audit
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-audit
     digest: sha256:189e063b7f7c9aa9b7cfe2195e600578d4aab672854d08182456afa684a0d8c6 # source-revision: 7e3af746a875982a5fd733c848bf769b945123c3
-  # The first Admin release script validates and replaces both placeholders
-  # before it adds ../../../base/provider-admin to this overlay.
   - name: doro-erp-frontend
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-frontend
-    digest: sha256:unconfigured # source-revision: unconfigured
+    digest: sha256:e66da074e62b58ca744c42a68bcf4970194903cadd6cfa6334be3bc34eb961d5 # source-revision: 381d4a3ecb8a096129b226cd7d17a1f87eecf942
