@@ -7,3 +7,5 @@ metadata:
     app.kubernetes.io/part-of: doro-erp
     environment: prod
     cell: alpha
+    doro.erp/environment: prod
+    doro.erp/cell: alpha
