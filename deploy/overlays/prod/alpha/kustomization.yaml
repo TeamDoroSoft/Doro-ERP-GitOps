@@ -207,4 +207,4 @@ images:
     digest: sha256:189e063b7f7c9aa9b7cfe2195e600578d4aab672854d08182456afa684a0d8c6 # source-revision: 7e3af746a875982a5fd733c848bf769b945123c3
   - name: doro-erp-frontend
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-frontend
-    digest: sha256:8fa0366034efaa2648bd2d36f053b9b902738ebd967740e48f29eedfd4aea67f # source-revision: 074ffb3d88c3cdd3c6b2136a2adb769904c27db8
+    digest: sha256:e66da074e62b58ca744c42a68bcf4970194903cadd6cfa6334be3bc34eb961d5 # source-revision: 381d4a3ecb8a096129b226cd7d17a1f87eecf942
