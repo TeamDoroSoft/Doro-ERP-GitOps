@@ -62,7 +62,7 @@ EKS에 적용할 Image Tag는 아직 완성되지 않았다. Prod Alpha NetworkP
 
 - Provider Admin Front Image는 ECR의 전체 Front Git SHA Tag와 일치하는 Digest만 Release Script로
   갱신한다. Admin Edge는 Service Release가 검증한 Public Edge와 동일한 Digest를 사용한다.
-- Prod Alpha Overlay에는 RDS PostgreSQL URL, Redis Endpoint와 SQS Queue 값이 구성되어 있다. MongoDB URI는 Audit Secret에서 주입한다.
+- Prod Alpha Overlay에는 RDS PostgreSQL URL, Redis Endpoint와 SQS Queue 값이 구성되어 있다. Store Access·Commerce·Payment·Queue의 Audit Outbox와 Audit SQS Listener는 Prod Alpha에서 명시적으로 활성화하며, MongoDB URI는 Audit Secret에서 주입한다. Audit DLQ Monitoring은 DLQ 조회 IAM을 별도로 승인하기 전까지 비활성 상태를 유지한다.
 - 목표 경계는 CloudFront와 Internal ALB에서 각각 TLS를 종료하고, ALB 뒤 ClusterIP 구간은 HMAC과 Kubernetes Service DNS로 제한한 HTTP를 사용하는 구조다. 각 Runtime의 `*_ALLOW_CLUSTER_SERVICE_HTTP=true` opt-in 없이는 기동 시 Fail-Closed한다.
 - CloudFront VPC Origin은 전용 `origin.doro.minseok.click` 이름과 Regional ACM 인증서를 사용해 Gateway API가 생성한 내부 ALB의 HTTPS 443 Listener에 연결한다. ALB에서 TLS를 종료한 뒤 Edge ClusterIP Target에는 HTTP로 전달한다.
 - Argo CD Application은 [`../../argocd/applications/doro-erp-prod-alpha.yaml`](../../argocd/applications/doro-erp-prod-alpha.yaml)에 선언한다. GitOps PR 병합 뒤 Auto-Sync와 Self-Heal을 수행하고 자동 Prune은 하지 않는다.
