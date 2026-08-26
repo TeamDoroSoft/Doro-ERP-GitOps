@@ -163,6 +163,9 @@ patches:
       - op: add
         path: /data/COMMERCE_STORE_ACCESS_ALLOW_CLUSTER_SERVICE_HTTP
         value: "true"
+      - op: replace
+        path: /data/COMMERCE_PAYMENT_ELIGIBILITY_PROVIDER_ENABLED
+        value: "true"
       - op: add
         path: /data/COMMERCE_PAYMENT_EVENTS_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-commerce-events.fifo
@@ -190,6 +193,9 @@ patches:
         value: http://commerce-api.doro-alpha.svc.cluster.local:8082
       - op: add
         path: /data/PAYMENT_COMMERCE_ELIGIBILITY_ALLOW_CLUSTER_SERVICE_HTTP
+        value: "true"
+      - op: replace
+        path: /data/PAYMENT_COMMERCE_ELIGIBILITY_ENABLED
         value: "true"
       - op: add
         path: /data/PAYMENT_COMMERCE_EVENTS_QUEUE_URL
