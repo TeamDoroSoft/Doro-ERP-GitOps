@@ -139,6 +139,9 @@ patches:
         path: /data/STORE_ACCESS_AUDIT_STANDARD_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
       - op: replace
+        path: /data/STORE_ACCESS_AUDIT_OUTBOX_ENABLED
+        value: "true"
+      - op: replace
         path: /data/STORE_ACCESS_EDGE_PUBLIC_HMAC_ENABLED
         value: "true"
   - target:
@@ -169,6 +172,9 @@ patches:
       - op: add
         path: /data/COMMERCE_AUDIT_STANDARD_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
+      - op: replace
+        path: /data/COMMERCE_AUDIT_OUTBOX_ENABLED
+        value: "true"
   - target:
       kind: ConfigMap
       name: payment-api-runtime
@@ -191,6 +197,9 @@ patches:
       - op: add
         path: /data/PAYMENT_AUDIT_EVENTS_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
+      - op: replace
+        path: /data/PAYMENT_OUTBOX_ENABLED
+        value: "true"
   - target:
       kind: ConfigMap
       name: queue-api-runtime
@@ -208,6 +217,9 @@ patches:
         path: /data/QUEUE_AUDIT_OUTBOX_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
       - op: replace
+        path: /data/QUEUE_AUDIT_OUTBOX_ENABLED
+        value: "true"
+      - op: replace
         path: /data/QUEUE_EDGE_HMAC_ENABLED
         value: "true"
   - target:
@@ -220,6 +232,9 @@ patches:
       - op: add
         path: /data/AUDIT_DLQ_QUEUE_NAME
         value: doro-erp-prod-alpha-audit-events-dlq.fifo
+      - op: replace
+        path: /data/AUDIT_SQS_LISTENER_ENABLED
+        value: "true"
 images:
   - name: doro-erp-edge
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-edge
