@@ -48,6 +48,16 @@ patches:
           doro.minseok.click/runtime-config-revision: commerce-events-v1
   - target:
       kind: Deployment
+      name: queue-api
+    patch: |-
+      # Runtime ConfigMaps use stable names, so change the Pod template when
+      # enabling consumers to ensure Argo CD rolls Queue automatically.
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          doro.minseok.click/runtime-config-revision: queue-events-v1
+  - target:
+      kind: Deployment
       labelSelector: app.kubernetes.io/part-of=doro-erp-admin
     patch: |-
       # Provider Admin uses the same single-AZ scheduling exception as the six
@@ -235,6 +245,12 @@ patches:
       - op: add
         path: /data/QUEUE_ORDER_EVENTS_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-queue-events.fifo
+      - op: replace
+        path: /data/QUEUE_ORDER_EVENTS_ENABLED
+        value: "true"
+      - op: replace
+        path: /data/QUEUE_INTERNAL_FULFILLMENT_ENABLED
+        value: "true"
       - op: add
         path: /data/QUEUE_AUDIT_OUTBOX_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
