@@ -132,6 +132,24 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-edge-to-rate-limit-redis
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: edge-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.24.0.0/16
+      ports:
+        - port: 6379
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-module-api-ingress
 spec:
   podSelector:

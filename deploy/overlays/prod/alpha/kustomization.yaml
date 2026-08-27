@@ -48,6 +48,15 @@ patches:
           doro.minseok.click/runtime-config-revision: commerce-events-v1
   - target:
       kind: Deployment
+      name: edge-api
+    patch: |-
+      # Stable ConfigMap names require an explicit Pod-template revision.
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          doro.minseok.click/runtime-config-revision: edge-public-checkout-rate-limit-redis-v1
+  - target:
+      kind: Deployment
       name: queue-api
     patch: |-
       # Runtime ConfigMaps use stable names, so change the Pod template when
@@ -133,6 +142,27 @@ patches:
       - op: add
         path: /data/EDGE_TRUSTED_PROXY_CIDR
         value: 10.24.0.0/16
+      - op: add
+        path: /data/EDGE_PUBLIC_CHECKOUT_REDIS_HOST
+        value: master.doro-erp-prod-alpha-session.q2tpkl.apn2.cache.amazonaws.com
+      - op: add
+        path: /data/EDGE_PUBLIC_CHECKOUT_REDIS_PORT
+        value: "6379"
+      - op: add
+        path: /data/EDGE_PUBLIC_CHECKOUT_REDIS_SSL_ENABLED
+        value: "true"
+      - op: add
+        path: /data/EDGE_PUBLIC_CHECKOUT_REDIS_CONNECT_TIMEOUT
+        value: PT1S
+      - op: add
+        path: /data/EDGE_PUBLIC_CHECKOUT_REDIS_TIMEOUT
+        value: PT1S
+      - op: add
+        path: /data/EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT
+        value: "30"
+      - op: add
+        path: /data/EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_TTL
+        value: PT1M
   - target:
       kind: ConfigMap
       name: store-access-api-runtime

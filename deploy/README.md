@@ -193,6 +193,7 @@ Runtime Pod에 Ingress와 Egress 기본 거부를 적용한다. 허용 행렬은
 | Payment | Commerce | 8082 | 주문·금액·결제 가능 상태 확인 |
 | 모든 Application | CoreDNS | TCP·UDP 53 | Service와 외부 Endpoint DNS 조회 |
 | 모든 Application | EKS Pod Identity Agent `169.254.170.23/32` | 80 | Pod Identity Credential 조회 |
+| Edge | Prod VPC | 6379 | 공개 Checkout 공통 rate-limit Redis TLS |
 | Store Access | Prod VPC | 5432 / 6379 / 443 | PostgreSQL / Redis / SQS PrivateLink |
 | Commerce, Queue | Prod VPC | 5432 / 443 | PostgreSQL / SQS PrivateLink |
 | Payment | Prod VPC / 외부 | 5432 / 443 | PostgreSQL / SQS PrivateLink와 Toss Test HTTPS |
@@ -282,6 +283,16 @@ HTTPRoute에 노출하지 않는다.
 Cookie, Authorization, HMAC, 비밀번호, 전체 요청·응답 Body와 결제정보를 Log에 추가하지 않는다.
 Application Signals 자동 계측은 이번 단계에서 비활성화하며 수동 Release와 중앙 Log를 검증한
 뒤 서비스별로 도입한다.
+
+공개 Checkout rate limit은 `edge.public.checkout.client.rate_limit` Counter와
+`outcome=allowed|limited|unavailable`만 노출한다. Client IP, HMAC Digest, Token과 Public ID를
+Metric Tag나 로그에 추가하지 않는다. Prometheus Operator와 Application Signals는 사용하지 않으며,
+`limited`·`unavailable`일 때만 Edge가 고정된 비민감 Event 이름을 기록한다. Infra의 Container Insights
+Log Metric Filter가 이를 `DoroERP/Edge` 저카디널리티 Metric으로 변환해 Redis 장애와 제한 급증을
+각각 SNS 경보에 연결한다. 실제 Log 수집·Filter·Alarm 상태는 Apply 후 별도 운영 검증 대상이다.
+
+공개 Checkout 경로는 기존 Edge HTTPRoute의 `/api/v1` Prefix에 포함되므로 별도 Route가 필요 없고,
+Edge의 외부 Redis Counter에는 업무 Migration Job이 없다.
 
 일반 설정은 ConfigMap Patch로, Credential과 HMAC Key는 AWS Secrets Manager로 전달한다. 실제 Secret 값과 값이 채워진 환경 파일은 커밋하지 않는다.
 
