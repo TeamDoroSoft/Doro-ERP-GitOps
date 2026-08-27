@@ -117,6 +117,13 @@ spec:
     - to:
         - podSelector:
             matchLabels:
+              app.kubernetes.io/name: queue-api
+      ports:
+        - port: 8084
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
               app.kubernetes.io/name: audit-api
       ports:
         - port: 8085
@@ -150,6 +157,8 @@ spec:
         - port: 8082
           protocol: TCP
         - port: 8083
+          protocol: TCP
+        - port: 8084
           protocol: TCP
         - port: 8085
           protocol: TCP
