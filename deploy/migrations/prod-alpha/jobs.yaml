@@ -2,13 +2,16 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: store-access-db-migration
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/name: store-access-db-migration
     app.kubernetes.io/part-of: doro-erp
     app.kubernetes.io/component: database-migration
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 86400
   template:
     metadata:
       labels:
@@ -69,10 +72,13 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: commerce-db-migration
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "1"
   labels: { app.kubernetes.io/name: commerce-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 86400
   template:
     metadata:
       labels: { app.kubernetes.io/name: commerce-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
@@ -119,10 +125,13 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: payment-db-migration
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "1"
   labels: { app.kubernetes.io/name: payment-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 86400
   template:
     metadata:
       labels: { app.kubernetes.io/name: payment-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
@@ -169,10 +178,13 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: queue-db-migration
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "1"
   labels: { app.kubernetes.io/name: queue-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 86400
   template:
     metadata:
       labels: { app.kubernetes.io/name: queue-db-migration, app.kubernetes.io/part-of: doro-erp, app.kubernetes.io/component: database-migration }
