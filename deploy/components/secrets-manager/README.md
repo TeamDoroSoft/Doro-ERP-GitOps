@@ -87,9 +87,22 @@ AWS Console
 }
 ```
 
-Public Edge에는 서비스 전용 민감값이 없으며 승인된 Public 방향별 HMAC만 주입한다. Terraform이
-만드는 `doro-erp/prod/alpha/edge` Container는 향후 Public Edge 전용 Secret을 위한 예약 공간이다.
+Public Edge의 `doro-erp/prod/alpha/edge` Container에는 공개 Checkout rate limit 전용 값을 둔다.
+Redis 인증정보는 Store Access Secret을 직접 읽지 않는다. Infra 절차에 따라
+`doro:edge:public-checkout:client:*`만 허용한 별도 ACL User를 만들고 그 전용 값을 Edge Key로 입력한다.
+Rate-limit HMAC은 방향별 내부 호출 HMAC이나 Store Access rate-limit HMAC과 재사용하지 않는다.
 Public Edge는 Provider Admin OIDC·Session 값과 Admin HMAC을 읽지 않는다.
+
+```json
+{
+  "EDGE_PUBLIC_CHECKOUT_REDIS_USERNAME": "",
+  "EDGE_PUBLIC_CHECKOUT_REDIS_PASSWORD": "",
+  "EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_HMAC_KEY": ""
+}
+```
+
+HMAC 값은 `openssl rand -base64 32`로 별도 생성한다. Redis Password와 HMAC 원문은 Manifest,
+Terraform 변수·State, Shell History와 운영 로그에 기록하지 않는다.
 
 ### `doro-erp/prod/alpha/provider-admin-edge`
 

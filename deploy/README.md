@@ -72,6 +72,32 @@ Image Tag를 채우고 `deploy/migrations/README.md`의 네 Job이 모두 성공
 Application Overlay를 `kubectl apply`하거나 Argo CD Sync하지 않는다.
 Controller IAM·Helm, Gateway API CRD와 GatewayClass는 Application Release보다 먼저 준비할 수 있다.
 
+### Kiosk 다중 모드 Release 적용 Gate
+
+이번 Release는 Runtime만 먼저 올리면 안 된다. 아래 조건을 순서대로 충족한다.
+
+1. Infra 적용 전에 `edge_rate_limit_redis_user_id`에 사용할 ElastiCache ACL User를 별도로 만들고
+   `doro:edge:public-checkout:client:*` Prefix와 `GET`, `SET`, `INCR`, `EVAL`, `EVALSHA`, `PING`만
+   허용한다.
+2. Infra Redis Stack을 적용한 뒤 출력된 Endpoint가 이 Overlay의
+   `EDGE_PUBLIC_CHECKOUT_REDIS_HOST`와 같은지 확인한다. 다르면 GitOps 값을 실제 출력으로 바꾼다.
+3. `doro-erp/prod/alpha/edge` Secret에
+   `EDGE_PUBLIC_CHECKOUT_REDIS_USERNAME`, `EDGE_PUBLIC_CHECKOUT_REDIS_PASSWORD`,
+   `EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_HMAC_KEY` 세 Key를 입력한다. 값은 Git, Terraform 변수와
+   Shell History에 기록하지 않는다.
+4. Service Revision `bb635fa57c436bcb8d0949ca37534ec429408a57`에서 네 Migration Image를
+   `bb635fa57c43-migration` Tag로 Build·Push하고 ECR에 모두 존재하는지 확인한다.
+5. `doro-erp-prod-migrations` Application만 먼저 수동 Sync해 Store Access V15, Commerce V17,
+   Queue V9를 적용한다. 네 Job이 모두 성공하기 전에는 Runtime Release PR을 병합하지 않는다.
+6. Service `main` Publish Workflow가 만든 Runtime Image PR에서 Edge·Store Access·Commerce·Payment·
+   Queue의 `source-revision`이 이번 변경을 포함한 `main` Revision인지 확인한 뒤 병합한다.
+7. Runtime Rollout 뒤 Edge Redis 연결, Kiosk 등록·목록, Entry/Fulfillment Projection과 Payment
+   Handoff 충돌 응답을 Smoke Test한다.
+
+Payment Schema에는 이번 변경의 신규 Migration이 없지만 네 Migration Image는 같은 Service
+Revision으로 맞춰 부분 Release를 피한다. Git Merge 결과의 Service SHA가 위 Revision과 달라지면
+Migration Tag와 Runtime `source-revision`을 실제 `main` SHA 기준으로 다시 생성한다.
+
 ## 기본 동작
 
 Base의 비동기 Consumer와 Outbox는 실제 Queue URL이 준비되기 전까지 Fail-Closed 상태로 비활성화한다.
@@ -193,6 +219,7 @@ Runtime Pod에 Ingress와 Egress 기본 거부를 적용한다. 허용 행렬은
 | Payment | Commerce | 8082 | 주문·금액·결제 가능 상태 확인 |
 | 모든 Application | CoreDNS | TCP·UDP 53 | Service와 외부 Endpoint DNS 조회 |
 | 모든 Application | EKS Pod Identity Agent `169.254.170.23/32` | 80 | Pod Identity Credential 조회 |
+| Edge | Prod VPC | 6379 | 공개 Checkout 공통 rate-limit Redis TLS |
 | Store Access | Prod VPC | 5432 / 6379 / 443 | PostgreSQL / Redis / SQS PrivateLink |
 | Commerce, Queue | Prod VPC | 5432 / 443 | PostgreSQL / SQS PrivateLink |
 | Payment | Prod VPC / 외부 | 5432 / 443 | PostgreSQL / SQS PrivateLink와 Toss Test HTTPS |
@@ -282,6 +309,16 @@ HTTPRoute에 노출하지 않는다.
 Cookie, Authorization, HMAC, 비밀번호, 전체 요청·응답 Body와 결제정보를 Log에 추가하지 않는다.
 Application Signals 자동 계측은 이번 단계에서 비활성화하며 수동 Release와 중앙 Log를 검증한
 뒤 서비스별로 도입한다.
+
+공개 Checkout rate limit은 `edge.public.checkout.client.rate_limit` Counter와
+`outcome=allowed|limited|unavailable`만 노출한다. Client IP, HMAC Digest, Token과 Public ID를
+Metric Tag나 로그에 추가하지 않는다. Prometheus Operator와 Application Signals는 사용하지 않으며,
+`limited`·`unavailable`일 때만 Edge가 고정된 비민감 Event 이름을 기록한다. Infra의 Container Insights
+Log Metric Filter가 이를 `DoroERP/Edge` 저카디널리티 Metric으로 변환해 Redis 장애와 제한 급증을
+각각 SNS 경보에 연결한다. 실제 Log 수집·Filter·Alarm 상태는 Apply 후 별도 운영 검증 대상이다.
+
+공개 Checkout 경로는 기존 Edge HTTPRoute의 `/api/v1` Prefix에 포함되므로 별도 Route가 필요 없고,
+Edge의 외부 Redis Counter에는 업무 Migration Job이 없다.
 
 일반 설정은 ConfigMap Patch로, Credential과 HMAC Key는 AWS Secrets Manager로 전달한다. 실제 Secret 값과 값이 채워진 환경 파일은 커밋하지 않는다.
 
