@@ -72,6 +72,32 @@ Image Tag를 채우고 `deploy/migrations/README.md`의 네 Job이 모두 성공
 Application Overlay를 `kubectl apply`하거나 Argo CD Sync하지 않는다.
 Controller IAM·Helm, Gateway API CRD와 GatewayClass는 Application Release보다 먼저 준비할 수 있다.
 
+### Kiosk 다중 모드 Release 적용 Gate
+
+이번 Release는 Runtime만 먼저 올리면 안 된다. 아래 조건을 순서대로 충족한다.
+
+1. Infra 적용 전에 `edge_rate_limit_redis_user_id`에 사용할 ElastiCache ACL User를 별도로 만들고
+   `doro:edge:public-checkout:client:*` Prefix와 `GET`, `SET`, `INCR`, `EVAL`, `EVALSHA`, `PING`만
+   허용한다.
+2. Infra Redis Stack을 적용한 뒤 출력된 Endpoint가 이 Overlay의
+   `EDGE_PUBLIC_CHECKOUT_REDIS_HOST`와 같은지 확인한다. 다르면 GitOps 값을 실제 출력으로 바꾼다.
+3. `doro-erp/prod/alpha/edge` Secret에
+   `EDGE_PUBLIC_CHECKOUT_REDIS_USERNAME`, `EDGE_PUBLIC_CHECKOUT_REDIS_PASSWORD`,
+   `EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_HMAC_KEY` 세 Key를 입력한다. 값은 Git, Terraform 변수와
+   Shell History에 기록하지 않는다.
+4. Service Revision `bb635fa57c436bcb8d0949ca37534ec429408a57`에서 네 Migration Image를
+   `bb635fa57c43-migration` Tag로 Build·Push하고 ECR에 모두 존재하는지 확인한다.
+5. `doro-erp-prod-migrations` Application만 먼저 수동 Sync해 Store Access V15, Commerce V17,
+   Queue V9를 적용한다. 네 Job이 모두 성공하기 전에는 Runtime Release PR을 병합하지 않는다.
+6. Service `main` Publish Workflow가 만든 Runtime Image PR에서 Edge·Store Access·Commerce·Payment·
+   Queue의 `source-revision`이 이번 변경을 포함한 `main` Revision인지 확인한 뒤 병합한다.
+7. Runtime Rollout 뒤 Edge Redis 연결, Kiosk 등록·목록, Entry/Fulfillment Projection과 Payment
+   Handoff 충돌 응답을 Smoke Test한다.
+
+Payment Schema에는 이번 변경의 신규 Migration이 없지만 네 Migration Image는 같은 Service
+Revision으로 맞춰 부분 Release를 피한다. Git Merge 결과의 Service SHA가 위 Revision과 달라지면
+Migration Tag와 Runtime `source-revision`을 실제 `main` SHA 기준으로 다시 생성한다.
+
 ## 기본 동작
 
 Base의 비동기 Consumer와 Outbox는 실제 Queue URL이 준비되기 전까지 Fail-Closed 상태로 비활성화한다.

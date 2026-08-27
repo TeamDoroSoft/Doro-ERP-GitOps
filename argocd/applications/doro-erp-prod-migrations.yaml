@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: doro-erp-prod-migrations
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TeamDoroSoft/Doro-ERP-GitOps.git
+    targetRevision: main
+    path: deploy/migrations/prod-alpha
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: doro-alpha
+  # Database changes are an explicit release gate. Do not enable automated sync.
+  syncPolicy:
+    retry:
+      limit: 1
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 1m

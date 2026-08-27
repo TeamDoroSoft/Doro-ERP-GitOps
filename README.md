@@ -15,6 +15,7 @@ kubectl kustomize deploy/migrations/prod-alpha
 bash -n deploy/scripts/record-prod-alpha-image.sh
 bash -n deploy/scripts/record-prod-alpha-admin-image.sh
 kubectl apply --dry-run=client -f argocd/applications/doro-erp-prod-alpha.yaml
+kubectl apply --dry-run=client -f argocd/applications/doro-erp-prod-migrations.yaml
 ```
 
 [`doro-erp-prod-alpha`](argocd/applications/doro-erp-prod-alpha.yaml) Argo CD Application은
@@ -23,11 +24,17 @@ GitOps `main`의 Prod Alpha Overlay를 추적하고 Auto-Sync와 Self-Heal을 �
 Service Image 게시 Workflow는 승인된 ECR Digest를 기록하는 GitOps PR을 만들며, 사람이 해당
 PR을 검토해 병합한 뒤에만 Argo CD가 EKS Rollout을 시작한다.
 
+[`doro-erp-prod-migrations`](argocd/applications/doro-erp-prod-migrations.yaml)는 같은 GitOps
+`main`의 Migration Kustomization을 추적하지만 자동 Sync를 사용하지 않는다. 신규 Schema는
+Migration Image가 ECR에 존재하고 전용 Secret이 준비된 뒤 운영자가 수동 Sync하며, Operation이
+`Succeeded`인 것을 확인한 후에만 Runtime Image PR을 병합한다.
+
 Application 설정을 Cluster에 반영하거나 복구할 때는 다음 명령을 사용한다.
 
 ```bash
 kubectl apply -f argocd/applications/doro-erp-prod-alpha.yaml
-kubectl get application doro-erp-prod-alpha -n argocd
+kubectl apply -f argocd/applications/doro-erp-prod-migrations.yaml
+kubectl get application doro-erp-prod-alpha doro-erp-prod-migrations -n argocd
 ```
 
 Provider Admin은 Public Gateway·CloudFront와 분리된 `doro-provider-admin` Namespace에서

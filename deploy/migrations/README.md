@@ -66,15 +66,24 @@ ECR Repository는 Immutable Tag를 사용하므로 같은 Tag를 덮어쓰지 �
 2. AWS Console에서 네 Migration Secret JSON을 입력한다.
 3. 위 Image를 Build·Push한다.
 4. `deploy/migrations/prod-alpha/kustomization.yaml`의 네 `newTag`를 실제 `MIGRATION_TAG`로 바꾼다.
-5. Migration Application을 먼저 Sync한다. ServiceAccount와 SecretProviderClass가 먼저
+5. [`doro-erp-prod-migrations`](../../argocd/applications/doro-erp-prod-migrations.yaml)
+   Application Manifest를 적용한 뒤 Migration Application을 수동 Sync한다. ServiceAccount와
+   SecretProviderClass가 먼저
    적용되고, 네 Migration Job은 Sync Hook으로 실행된다.
 
 ```bash
 cd ~/Doro-ERP-GitOps
 kubectl kustomize deploy/migrations/prod-alpha
+kubectl apply -f argocd/applications/doro-erp-prod-migrations.yaml
 
 # Argo CD UI에서 doro-erp-prod-migrations Application을 Sync한다.
 ```
+
+현재 Kiosk 다중 모드 Release의 Migration Tag는 Service Revision
+`bb635fa57c436bcb8d0949ca37534ec429408a57`에서 만든 `bb635fa57c43-migration`이다. 네 ECR
+Repository에 이 Tag가 모두 존재하기 전에는 Migration Application을 Sync하지 않는다. Service가
+다른 Revision으로 병합되거나 다시 Build되면 이 고정값을 그대로 사용하지 말고 해당 Revision의
+새 Immutable Tag로 네 항목을 함께 교체한다.
 
 Sync 중에는 다음 명령으로 Hook Job을 확인할 수 있다.
 
