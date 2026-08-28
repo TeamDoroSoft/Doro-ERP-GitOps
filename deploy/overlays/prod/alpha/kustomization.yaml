@@ -45,7 +45,7 @@ patches:
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-config-revision: commerce-events-v1
+          doro.minseok.click/runtime-config-revision: commerce-events-payment-handoff-v1
           doro.minseok.click/runtime-secret-revision: complete-internal-hmac-directions-v1
   - target:
       kind: Deployment
@@ -55,7 +55,7 @@ patches:
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-config-revision: edge-public-checkout-rate-limit-redis-v1
+          doro.minseok.click/runtime-config-revision: edge-order-mutation-timeout-v1
   - target:
       kind: Deployment
       name: queue-api
@@ -65,7 +65,7 @@ patches:
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-config-revision: queue-events-v1
+          doro.minseok.click/runtime-config-revision: queue-store-access-context-v1
           doro.minseok.click/runtime-secret-revision: queue-to-store-access-v1
   - target:
       kind: Deployment
@@ -76,6 +76,7 @@ patches:
       - op: add
         path: /spec/template/metadata/annotations
         value:
+          doro.minseok.click/runtime-config-revision: store-access-payment-handoff-v1
           doro.minseok.click/runtime-secret-revision: complete-internal-hmac-directions-v1
   - target:
       kind: Deployment
@@ -85,6 +86,7 @@ patches:
       - op: add
         path: /spec/template/metadata/annotations
         value:
+          doro.minseok.click/runtime-config-revision: payment-handoff-v1
           doro.minseok.click/runtime-secret-revision: complete-internal-hmac-directions-v1
   - target:
       kind: Deployment
@@ -184,6 +186,9 @@ patches:
       - op: add
         path: /data/EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_TTL
         value: PT1M
+      - op: add
+        path: /data/EDGE_ORDER_MUTATION_READ_TIMEOUT
+        value: PT10S
   - target:
       kind: ConfigMap
       name: store-access-api-runtime
@@ -207,8 +212,20 @@ patches:
         path: /data/COMMERCE_INTERNAL_BASE_URL
         value: http://commerce-api.doro-alpha.svc.cluster.local:8082
       - op: add
+        path: /data/PAYMENT_INTERNAL_BASE_URL
+        value: http://payment-api.doro-alpha.svc.cluster.local:8083
+      - op: add
         path: /data/STORE_ACCESS_COMMERCE_ALLOW_CLUSTER_SERVICE_HTTP
         value: "true"
+      - op: add
+        path: /data/STORE_ACCESS_PAYMENT_ALLOW_CLUSTER_SERVICE_HTTP
+        value: "true"
+      - op: add
+        path: /data/STORE_ACCESS_PAYMENT_CONNECT_TIMEOUT
+        value: PT1S
+      - op: add
+        path: /data/STORE_ACCESS_PAYMENT_READ_TIMEOUT
+        value: PT2S
       - op: add
         path: /data/STORE_ACCESS_AUDIT_STANDARD_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-audit-events.fifo
@@ -234,6 +251,18 @@ patches:
       - op: add
         path: /data/QUEUE_INTERNAL_BASE_URL
         value: http://queue-api.doro-alpha.svc.cluster.local:8084
+      - op: add
+        path: /data/PAYMENT_INTERNAL_BASE_URL
+        value: http://payment-api.doro-alpha.svc.cluster.local:8083
+      - op: add
+        path: /data/COMMERCE_PAYMENT_HANDOFF_ALLOW_CLUSTER_SERVICE_HTTP
+        value: "true"
+      - op: add
+        path: /data/COMMERCE_PAYMENT_HANDOFF_CONNECT_TIMEOUT
+        value: PT1S
+      - op: add
+        path: /data/COMMERCE_PAYMENT_HANDOFF_READ_TIMEOUT
+        value: PT2S
       - op: add
         path: /data/COMMERCE_STORE_ACCESS_ALLOW_CLUSTER_SERVICE_HTTP
         value: "true"
@@ -272,10 +301,22 @@ patches:
         path: /data/COMMERCE_INTERNAL_BASE_URL
         value: http://commerce-api.doro-alpha.svc.cluster.local:8082
       - op: add
+        path: /data/STORE_ACCESS_INTERNAL_BASE_URL
+        value: http://store-access-api.doro-alpha.svc.cluster.local:8081
+      - op: add
         path: /data/PAYMENT_COMMERCE_ELIGIBILITY_ALLOW_CLUSTER_SERVICE_HTTP
         value: "true"
       - op: replace
         path: /data/PAYMENT_COMMERCE_ELIGIBILITY_ENABLED
+        value: "true"
+      - op: add
+        path: /data/PAYMENT_DEVICE_VALIDATION_ALLOW_CLUSTER_SERVICE_HTTP
+        value: "true"
+      - op: add
+        path: /data/PAYMENT_DEVICE_VALIDATION_ENABLED
+        value: "true"
+      - op: add
+        path: /data/PAYMENT_HANDOFF_ENABLED
         value: "true"
       - op: add
         path: /data/PAYMENT_COMMERCE_EVENTS_QUEUE_URL
@@ -296,6 +337,21 @@ patches:
       - op: add
         path: /data/SPRING_FLYWAY_ENABLED
         value: "false"
+      - op: add
+        path: /data/STORE_ACCESS_INTERNAL_BASE_URL
+        value: http://store-access-api.doro-alpha.svc.cluster.local:8081
+      - op: add
+        path: /data/QUEUE_STORE_ACCESS_CONTEXT_ENABLED
+        value: "true"
+      - op: add
+        path: /data/QUEUE_STORE_ACCESS_ALLOW_CLUSTER_SERVICE_HTTP
+        value: "true"
+      - op: add
+        path: /data/QUEUE_STORE_ACCESS_CONNECT_TIMEOUT
+        value: PT1S
+      - op: add
+        path: /data/QUEUE_STORE_ACCESS_READ_TIMEOUT
+        value: PT2S
       - op: add
         path: /data/QUEUE_ORDER_EVENTS_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-queue-events.fifo
