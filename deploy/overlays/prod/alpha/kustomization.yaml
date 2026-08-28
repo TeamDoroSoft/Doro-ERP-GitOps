@@ -67,6 +67,25 @@ patches:
           doro.minseok.click/runtime-config-revision: queue-events-v1
   - target:
       kind: Deployment
+      name: store-access-api
+    patch: |-
+      # Stable Secret names require a Pod-template revision so the JVM reloads
+      # the newly mapped payment-to-store-access HMAC environment variable.
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          doro.minseok.click/runtime-secret-revision: payment-to-store-access-v1
+  - target:
+      kind: Deployment
+      name: payment-api
+    patch: |-
+      # Both sides of the signed call must receive the same direction Secret.
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          doro.minseok.click/runtime-secret-revision: payment-to-store-access-v1
+  - target:
+      kind: Deployment
       labelSelector: app.kubernetes.io/part-of=doro-erp-admin
     patch: |-
       # Provider Admin uses the same single-AZ scheduling exception as the six
