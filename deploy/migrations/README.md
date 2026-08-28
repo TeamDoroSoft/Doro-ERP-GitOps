@@ -80,7 +80,8 @@ kubectl apply -f argocd/applications/doro-erp-prod-migrations.yaml
 ```
 
 현재 Kiosk 다중 모드 Release의 Migration Tag는 Service Revision
-`bb635fa57c436bcb8d0949ca37534ec429408a57`에서 만든 `bb635fa57c43-migration`이다. 네 ECR
+`b4c87d9a999b7e25c9d7832f9653b1374193883d`에서 만든 `b4c87d9a999b-migration`이다. 이 Revision은
+Queue의 고객 이름·전화번호 뒷자리 컬럼을 추가하는 V10을 포함한다. 네 ECR
 Repository에 이 Tag가 모두 존재하기 전에는 Migration Application을 Sync하지 않는다. Service가
 다른 Revision으로 병합되거나 다시 Build되면 이 고정값을 그대로 사용하지 말고 해당 Revision의
 새 Immutable Tag로 네 항목을 함께 교체한다.
