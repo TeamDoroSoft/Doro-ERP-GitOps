@@ -327,6 +327,12 @@ Viewer `Host`만 Origin 이름으로 교체한다. 따라서 전용 Origin 인�
 일치하고 Edge `HTTPRoute`의 `/api/v1` Rule이 요청을 수용한다. ALB Security Group은 CloudFront
 Origin-Facing Prefix List의 TCP 443만 허용한다.
 
+Public Edge가 원본 `X-Forwarded-For` 해석을 소유하며 Prod Alpha는
+`SERVER_FORWARD_HEADERS_STRATEGY=NONE`으로 Spring의 Forwarded Header 변환을 명시적으로
+비활성화한다. `NATIVE` 또는 `FRAMEWORK`로 바꾸려면 신뢰 Proxy 경계와 Client IP Resolver를
+함께 재설계해야 한다. 별도 ConfigMap과 `prod,admin` Profile을 사용하는 Provider Admin Edge는
+이 설정을 상속하지 않는다.
+
 Provider Admin은 별도 `provider-admin-gateway`와 `LoadBalancerConfiguration`을 사용한다.
 `admin.doro.minseok.click` Host에서 `/api/v1/provider/**`는 `provider-admin-edge-api:8080`,
 그 밖의 경로는 `provider-admin:8080`으로 전달한다. ALB 이름과 Security Group은 각각
@@ -368,6 +374,9 @@ Prod Alpha 결과에는 다음이 포함되어야 한다.
 - PostgreSQL 사용 Deployment 4개의 `SPRING_FLYWAY_ENABLED=false`
 - 각 Deployment와 HPA의 최소 Replica 2개
 - 각 Deployment의 Zone·Hostname Topology Spread Constraint
+- Public `edge-api-runtime`에만 `SERVER_FORWARD_HEADERS_STRATEGY=NONE`
+- Public `edge-api` Pod Template의 `doro.minseok.click/runtime-config-revision` Rollout 값
+- Provider Admin Edge와 재사용 Base에는 `SERVER_FORWARD_HEADERS_STRATEGY`가 없음
 
 Secret 원문은 렌더링 결과나 Git에 포함되지 않아야 한다.
 

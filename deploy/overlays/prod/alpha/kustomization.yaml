@@ -55,7 +55,7 @@ patches:
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-config-revision: edge-order-mutation-timeout-v1
+          doro.minseok.click/runtime-config-revision: edge-public-checkout-forward-headers-v2
           doro.minseok.click/runtime-secret-revision: public-checkout-rate-limit-v1
   - target:
       kind: Deployment
@@ -166,6 +166,9 @@ patches:
       - op: add
         path: /data/EDGE_TRUSTED_PROXY_CIDR
         value: 10.24.0.0/16
+      - op: add
+        path: /data/SERVER_FORWARD_HEADERS_STRATEGY
+        value: NONE
       - op: add
         path: /data/EDGE_PUBLIC_CHECKOUT_REDIS_HOST
         value: master.doro-erp-prod-alpha-session.q2tpkl.apn2.cache.amazonaws.com
