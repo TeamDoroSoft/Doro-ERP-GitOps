@@ -9,13 +9,13 @@ resources:
 images:
   - name: doro-erp-store-access-migration
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-store-access
-    newTag: 05418429a849-migration # source-revision: 05418429a84933e4cde415d3232b0ff6184c749c
+    newTag: ba46ab5c1d7d-migration # source-revision: ba46ab5c1d7d8fe5cb01e7be064dcd84bc2c42c5
   - name: doro-erp-commerce-migration
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-commerce
-    newTag: 05418429a849-migration # source-revision: 05418429a84933e4cde415d3232b0ff6184c749c
+    newTag: ba46ab5c1d7d-migration # source-revision: ba46ab5c1d7d8fe5cb01e7be064dcd84bc2c42c5
   - name: doro-erp-payment-migration
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-payment
-    newTag: 05418429a849-migration # source-revision: 05418429a84933e4cde415d3232b0ff6184c749c
+    newTag: ba46ab5c1d7d-migration # source-revision: ba46ab5c1d7d8fe5cb01e7be064dcd84bc2c42c5
   - name: doro-erp-queue-migration
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-queue
-    newTag: 05418429a849-migration # source-revision: 05418429a84933e4cde415d3232b0ff6184c749c
+    newTag: ba46ab5c1d7d-migration # source-revision: ba46ab5c1d7d8fe5cb01e7be064dcd84bc2c42c5
