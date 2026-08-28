@@ -46,6 +46,7 @@ patches:
         path: /spec/template/metadata/annotations
         value:
           doro.minseok.click/runtime-config-revision: commerce-events-v1
+          doro.minseok.click/runtime-secret-revision: complete-internal-hmac-directions-v1
   - target:
       kind: Deployment
       name: edge-api
@@ -71,20 +72,20 @@ patches:
       name: store-access-api
     patch: |-
       # Stable Secret names require a Pod-template revision so the JVM reloads
-      # newly mapped inbound HMAC environment variables.
+      # every newly mapped internal HMAC environment variable.
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-secret-revision: payment-and-queue-to-store-access-v1
+          doro.minseok.click/runtime-secret-revision: complete-internal-hmac-directions-v1
   - target:
       kind: Deployment
       name: payment-api
     patch: |-
-      # Both sides of the signed call must receive the same direction Secret.
+      # Payment must reload the new Commerce and Store Access direction Secrets.
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-secret-revision: payment-to-store-access-v1
+          doro.minseok.click/runtime-secret-revision: complete-internal-hmac-directions-v1
   - target:
       kind: Deployment
       labelSelector: app.kubernetes.io/part-of=doro-erp-admin

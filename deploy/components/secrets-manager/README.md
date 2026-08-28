@@ -139,9 +139,11 @@ Session Cookie Secret과 Admin HMAC은 각각 독립적으로 `openssl rand -bas
 | `hmac/edge-to-commerce` | `DORO_HMAC_EDGE_TO_COMMERCE_SECRET` | Edge, Commerce |
 | `hmac/edge-to-queue` | `DORO_HMAC_EDGE_TO_QUEUE_SECRET` | Edge, Queue |
 | `hmac/commerce-to-store-access` | `DORO_HMAC_COMMERCE_TO_STORE_ACCESS_SECRET` | Commerce, Store Access |
+| `hmac/commerce-to-payment` | `DORO_HMAC_COMMERCE_TO_PAYMENT_SECRET` | Commerce, Payment |
 | `hmac/payment-to-store-access` | `DORO_HMAC_PAYMENT_TO_STORE_ACCESS_SECRET` | Payment, Store Access |
 | `hmac/queue-to-store-access` | `DORO_HMAC_QUEUE_TO_STORE_ACCESS_SECRET` | Queue, Store Access |
 | `hmac/store-access-to-commerce` | `DORO_HMAC_STORE_ACCESS_TO_COMMERCE_SECRET` | Store Access, Commerce |
+| `hmac/store-access-to-payment` | `DORO_HMAC_STORE_ACCESS_TO_PAYMENT_SECRET` | Store Access, Payment |
 | `hmac/payment-to-commerce` | `DORO_HMAC_PAYMENT_TO_COMMERCE_SECRET` | Payment, Commerce |
 | `hmac/commerce-to-queue` | `DORO_HMAC_COMMERCE_TO_QUEUE_SECRET` | Commerce, Queue |
 | `hmac/actor-context` | `COMMERCE_ACTOR_CONTEXT_SECRET` | Edge, Store Access, Commerce |
