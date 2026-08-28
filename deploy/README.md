@@ -99,6 +99,179 @@ Payment Schema에는 이번 변경의 신규 Migration이 없지만 Queue 고객
 SHA가 위 Revision과 달라지면 Migration Tag와 Runtime `source-revision`을 실제 `main` SHA 기준으로
 다시 생성한다.
 
+#### Public Checkout Secret 사전 검증
+
+다음 명령은 Secrets Manager 응답을 `jq`에 직접 전달하고 Key 존재·빈 값 아님과
+HMAC의 UTF-8 byte 길이만 출력한다. `set -x`, AWS CLI debug Log, Shell 변수 저장을
+사용하지 말고 화면 공유·CI Log가 없는 운영 Terminal에서 실행한다.
+
+```bash
+set -o pipefail
+aws secretsmanager get-secret-value \
+  --secret-id doro-erp/prod/alpha/edge \
+  --query SecretString \
+  --output text \
+  --no-cli-pager \
+| jq -e '
+    . as $secret
+    | ["EDGE_PUBLIC_CHECKOUT_REDIS_USERNAME",
+       "EDGE_PUBLIC_CHECKOUT_REDIS_PASSWORD",
+       "EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_HMAC_KEY"] as $keys
+    | ($secret.EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_HMAC_KEY | utf8bytelength) as $hmacBytes
+    | if all($keys[]; ($secret[.] | type == "string" and length > 0))
+         and $hmacBytes >= 32
+      then {required_keys: $keys, hmac_utf8_bytes: $hmacBytes, validation: "passed"}
+      else error("required key, non-empty value, or HMAC >=32 UTF-8 bytes validation failed")
+      end'
+```
+
+CSI 동기화 후에는 Kubernetes Secret에서도 Key 이름과 디코딩된 HMAC byte 길이만
+확인한다. 아래 `jq`는 원문·Base64·Digest를 출력하지 않는다.
+
+```bash
+kubectl get secret doro-erp-edge-runtime -n doro-alpha -o json \
+| jq -e '
+    .data as $data
+    | ["EDGE_PUBLIC_CHECKOUT_REDIS_USERNAME",
+       "EDGE_PUBLIC_CHECKOUT_REDIS_PASSWORD",
+       "EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_HMAC_KEY"] as $keys
+    | ($data.EDGE_PUBLIC_CHECKOUT_CLIENT_RATE_LIMIT_HMAC_KEY | @base64d | utf8bytelength) as $hmacBytes
+    | if all($keys[]; ($data[.] | type == "string" and length > 0))
+         and $hmacBytes >= 32
+      then {key_names: $keys, hmac_utf8_bytes: $hmacBytes, validation: "passed"}
+      else error("required Kubernetes Secret key or HMAC >=32 UTF-8 bytes validation failed")
+      end'
+```
+
+#### Edge Redis ACL Smoke Test
+
+Edge 전용 ACL User의 비밀번호는 `redis-cli -a`나 URI에 넣지 않고 무에코 Prompt로
+`REDISCLI_AUTH`에만 일시 주입한다. 아래 Test는 TLS `PING`과 Application Lua가 사용하는
+`GET`/`SET`/`INCR`를 `EVAL`·`EVALSHA` 모두로 실행한다. 승인된 비민감 Test Prefix만
+사용하며 실제 client IP, token, publicId를 Key에 넣지 않는다.
+
+```bash
+(
+read -r -p 'Edge Redis ACL username: ' REDISCLI_USER
+read -r -s -p 'Edge Redis ACL password: ' REDISCLI_AUTH
+printf '\n'
+export REDISCLI_AUTH
+
+REDIS_HOST=master.doro-erp-prod-alpha-session.q2tpkl.apn2.cache.amazonaws.com
+TEST_KEY="doro:edge:public-checkout:client:acl-smoke-$(date -u +%Y%m%dT%H%M%SZ)"
+DENIED_KEY="doro:edge:acl-smoke-denied-$(date -u +%Y%m%dT%H%M%SZ)"
+RATE_LIMIT_SCRIPT='local current=redis.call("GET",KEYS[1]); if not current then redis.call("SET",KEYS[1],"1","PX",ARGV[1]); return 1 end; return redis.call("INCR",KEYS[1])'
+RATE_LIMIT_SHA="$(printf '%s' "$RATE_LIMIT_SCRIPT" | sha1sum | awk '{print $1}')"
+
+redis-cli -e --tls -h "$REDIS_HOST" --user "$REDISCLI_USER" PING
+redis-cli -e --tls -h "$REDIS_HOST" --user "$REDISCLI_USER" \
+  EVAL "$RATE_LIMIT_SCRIPT" 1 "$TEST_KEY" 60000
+redis-cli -e --tls -h "$REDIS_HOST" --user "$REDISCLI_USER" \
+  EVALSHA "$RATE_LIMIT_SHA" 1 "$TEST_KEY" 60000
+if redis-cli -e --tls -h "$REDIS_HOST" --user "$REDISCLI_USER" \
+    EVAL "$RATE_LIMIT_SCRIPT" 1 "$DENIED_KEY" 60000
+then
+  printf '%s\n' 'ERROR: Redis ACL allowed a non-approved prefix' >&2
+  exit 1
+else
+  printf '%s\n' 'PASS: Redis ACL denied the non-approved prefix'
+fi
+)
+```
+
+`TEST_KEY`는 60초 TTL로 자동 정리되며 ACL에 `DEL`을 추가하지 않는다. 모든 성공
+응답은 숫자 또는 `PONG`이어야 하고, 비승인 Prefix는 `NOPERM` 계열 응답으로
+실패해야 한다. Test 중 추가된 Key 이름에는 실제 요청 식별자가 없다.
+
+#### Secret Rotation과 운영 신호
+
+Secret 변경은 우선 이 Overlay의 Edge
+`doro.minseok.click/runtime-secret-revision`을 새로운 비민감 Revision으로 bump한 GitOps PR을
+병합해 Argo CD가 Rollout하게 한다. 긴급 검증에서만 수동 Restart하고 바로 Ready를
+확인한다.
+
+```bash
+kubectl rollout restart deployment/edge-api -n doro-alpha
+kubectl rollout status deployment/edge-api -n doro-alpha --timeout=5m
+```
+
+CSI Rotation이 Mounted File과 Kubernetes Secret을 갱신해도 `envFrom`으로 시작한 JVM은 값을
+자동 Reload하지 않는다. 수동 Restart는 Cluster와 Git 정본의 Revision Drift를 남길 수
+있으므로 긴급 검증 후에도 반드시 annotation bump를 GitOps에 기록한다.
+
+Smoke Request의 비민감 `requestId`를 알 때는 CloudWatch에서 고정 Event와 Reason만
+추출한다. SLF4J Log에 기록되는 Enum Reason은 `INVALID_HMAC`, `TRUSTED_PROXY`,
+`REDIS_STORE` 세 가지다. 아래 `jq`는 `filter-log-events` Event의 outer JSON
+`message`, Container Insights의 `log`, Spring ECS JSON을 순서대로 Parsing한 뒤 ECS
+`requestId`를 비교하고 ECS `message` 문자열의 고정 형식만 인정한다. 중첩
+구조가 다르거나 일치 Event가 없으면 원문을 fallback 출력하지 않고 검증을
+실패한다.
+
+```bash
+read -r -p 'Smoke requestId: ' REQUEST_ID
+aws logs filter-log-events \
+  --log-group-name /aws/containerinsights/doro-erp-prod/application \
+  --filter-pattern '"public_checkout_rate_limit_unavailable"' \
+  --output json \
+  --no-cli-pager \
+| jq -e --arg requestId "$REQUEST_ID" '
+    [.events[].message
+     | (fromjson?) as $container
+     | select($container | type == "object" and (.log | type == "string"))
+     | ($container.log | fromjson?) as $ecs
+     | select($ecs | type == "object"
+              and .requestId == $requestId
+              and (.message | type == "string"))
+     | ($ecs.message
+        | capture("^public_checkout_rate_limit_unavailable reason=(?<reason>INVALID_HMAC|TRUSTED_PROXY|REDIS_STORE)$")?) as $match
+     | select($match != null)
+     | {event: "public_checkout_rate_limit_unavailable",
+        reason: $match.reason,
+        requestId: $requestId}]
+    | if length > 0 then .
+      else error("matching safe public checkout rate-limit event was not found")
+      end'
+unset REQUEST_ID
+```
+
+Micrometer
+`edge.public.checkout.client.rate_limit{outcome=unavailable,reason=invalid_hmac|trusted_proxy|redis_store}`는
+Log Enum과 달리 소문자 `reason.tag()` 값을 사용한다. Micrometer Exporter와 Scrape
+경로를 별도로 구성한 환경에서만 확인할 수 있다. 현재
+Prod Alpha의 기본 운영 검증은 Container Insights Log Metric Filter가 만드는
+CloudWatch `DoroERP/Edge` Namespace의 `PublicCheckoutRateLimitUnavailable` Metric과 연결
+Alarm을 대상으로 한다. 아래 명령은 Metric·Alarm 메타데이터만 출력하며 실제
+요청 Log를 출력하지 않는다.
+
+```bash
+aws cloudwatch list-metrics \
+  --namespace DoroERP/Edge \
+  --metric-name PublicCheckoutRateLimitUnavailable \
+  --no-cli-pager \
+  --output json \
+| jq -e '
+    [.Metrics[]
+     | {namespace: .Namespace, metric_name: .MetricName}]
+    | if length > 0 then .
+      else error("CloudWatch log-derived metric was not found")
+      end'
+
+aws cloudwatch describe-alarms-for-metric \
+  --namespace DoroERP/Edge \
+  --metric-name PublicCheckoutRateLimitUnavailable \
+  --no-cli-pager \
+  --output json \
+| jq -e '
+    [.MetricAlarms[]
+     | {alarm_name: .AlarmName, state: .StateValue}]
+    | if length > 0 then .
+      else error("CloudWatch alarm for the log-derived metric was not found")
+      end'
+```
+
+Log·Metric Tag·운영 메모에 client IP, HMAC Digest, token, publicId, Secret 원문을 출력하거나
+복사하지 않는다.
+
 ### Payment Handoff 활성화 순서
 
 `PAYMENT_HANDOFF_ENABLED=true`만 먼저 반영하면 Payment는 방향별 HMAC과 token/client key 누락을

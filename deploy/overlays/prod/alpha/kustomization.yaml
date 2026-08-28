@@ -51,11 +51,12 @@ patches:
       kind: Deployment
       name: edge-api
     patch: |-
-      # Stable ConfigMap names require an explicit Pod-template revision.
+      # Stable ConfigMap and Secret names require explicit Pod-template revisions.
       - op: add
         path: /spec/template/metadata/annotations
         value:
           doro.minseok.click/runtime-config-revision: edge-order-mutation-timeout-v1
+          doro.minseok.click/runtime-secret-revision: public-checkout-rate-limit-v1
   - target:
       kind: Deployment
       name: queue-api
