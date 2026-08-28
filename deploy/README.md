@@ -291,6 +291,13 @@ Log·Metric Tag·운영 메모에 client IP, HMAC Digest, token, publicId, Secre
 5. Payment, Commerce, Store Access Rollout이 모두 Ready인 뒤 직원·Order Kiosk handoff 생성,
    Payment Kiosk current 조회, Table checkout, 활성 handoff가 있는 기기 변경 차단을 Smoke Test한다.
 
+Prod Alpha는 `PAYMENT_HANDOFF_TERMINAL_ACKNOWLEDGEMENT=PT5S`를 명시한다. 이 값은
+`CANCELLED`·`FAILED`·`EXPIRED`·`PAID`인 최근 terminal handoff를 Payment Kiosk의 current 조회에
+노출할 수 있는 acknowledgement 기간이다. Service는 이미 `DISPLAYED`·`PROCESSING` 중인 handoff를
+먼저 유지하고, 새 `QUEUED` handoff가 있으면 recent terminal보다 먼저 claim해 `DISPLAYED`로
+전환한다. 따라서 terminal acknowledgement는 진행 중이거나 대기 중인 handoff가 없어 queue가
+비었을 때만 표시되며, 취소 직후 들어온 새 결제 QR을 이 5초 동안 막지 않는다.
+
 이번 활성화에는 신규 Database Migration이 없다. Secret/IAM 준비 전 Runtime Sync는 CSI Mount 또는
 Payment 기동을 fail-closed로 실패시키므로 금지하며, Rollback은 플래그만 내리는 대신 세 Runtime을
 같은 직전 Git Revision으로 되돌려 caller/provider 방향을 일치시킨다.
