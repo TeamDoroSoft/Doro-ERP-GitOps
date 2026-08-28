@@ -98,6 +98,29 @@ Payment Schema에는 이번 변경의 신규 Migration이 없지만 네 Migratio
 Revision으로 맞춰 부분 Release를 피한다. Git Merge 결과의 Service SHA가 위 Revision과 달라지면
 Migration Tag와 Runtime `source-revision`을 실제 `main` SHA 기준으로 다시 생성한다.
 
+### Payment Handoff 활성화 순서
+
+`PAYMENT_HANDOFF_ENABLED=true`만 먼저 반영하면 Payment는 방향별 HMAC과 token/client key 누락을
+감지해 기동을 거절한다. 다음 의존성을 모두 준비한 뒤 동일 Runtime Release로 활성화한다.
+
+1. Infra의 `hmac_directions` 정본에 이미 선언된 `commerce-to-payment`,
+   `store-access-to-payment`, `payment-to-commerce`, `payment-to-store-access` Secret Container와
+   caller/provider Pod Identity Reader 정책을 Terraform Plan에서 확인하고 먼저 적용한다.
+2. 각 방향별 Secrets Manager Object에 README와 같은 JSON Key로 서로 다른 32-byte Base64 값을
+   입력한다. `doro-erp/prod/alpha/payment`에는 `PAYMENT_HANDOFF_TOKEN_HMAC_KEY`와
+   `PAYMENT_TOSS_TEST_CLIENT_KEY`도 입력한다. 실제 값은 Git·Terraform 변수에 저장하지 않는다.
+3. SecretProviderClass가 Payment·Commerce·Store Access 양쪽 Kubernetes Secret에 같은 방향 Key를
+   동기화했는지 Key 이름만 확인한다. 값이나 Digest는 출력하지 않는다.
+4. Runtime Overlay를 Sync해 Payment handoff, Payment→Commerce eligibility,
+   Payment→Store Access device validation, Commerce→Payment table handoff와
+   Store Access→Payment active-handoff guard를 함께 활성화한다.
+5. Payment, Commerce, Store Access Rollout이 모두 Ready인 뒤 직원·Order Kiosk handoff 생성,
+   Payment Kiosk current 조회, Table checkout, 활성 handoff가 있는 기기 변경 차단을 Smoke Test한다.
+
+이번 활성화에는 신규 Database Migration이 없다. Secret/IAM 준비 전 Runtime Sync는 CSI Mount 또는
+Payment 기동을 fail-closed로 실패시키므로 금지하며, Rollback은 플래그만 내리는 대신 세 Runtime을
+같은 직전 Git Revision으로 되돌려 caller/provider 방향을 일치시킨다.
+
 ## 기본 동작
 
 Base의 비동기 Consumer와 Outbox는 실제 Queue URL이 준비되기 전까지 Fail-Closed 상태로 비활성화한다.

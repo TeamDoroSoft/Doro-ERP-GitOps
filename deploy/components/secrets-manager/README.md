@@ -64,8 +64,10 @@ AWS Console
   "PAYMENT_DB_USERNAME": "",
   "PAYMENT_DB_PASSWORD": "",
   "PAYMENT_TOSS_TEST_SECRET_KEY": "",
+  "PAYMENT_TOSS_TEST_CLIENT_KEY": "",
   "PAYMENT_PAYMENT_KEY_ENCRYPTION_KEY": "",
-  "PAYMENT_IDEMPOTENCY_HMAC_KEY": ""
+  "PAYMENT_IDEMPOTENCY_HMAC_KEY": "",
+  "PAYMENT_HANDOFF_TOKEN_HMAC_KEY": ""
 }
 ```
 
@@ -157,8 +159,8 @@ openssl rand -base64 32
 같은 출력값을 여러 방향에 재사용하지 않는다.
 
 수동으로 만든 방향별 Secret도 두 Workload의 Pod Identity Role이 읽을 수 있어야 한다.
-`payment-to-store-access`는 Payment와 Store Access, `queue-to-store-access`는 Queue와 Store Access를
-Infra의 HMAC 방향 목록에 Reader로 등록하고,
+`commerce-to-payment`, `store-access-to-payment`, `payment-to-store-access`와
+`queue-to-store-access`는 caller와 provider 두 서비스 모두를 Infra의 HMAC 방향 목록에 Reader로 등록하고,
 이미 존재하는 Secret Container를 Terraform State로 Import한 뒤 IAM 변경을 적용한다. 이 권한 적용 없이
 GitOps Manifest만 동기화하면 CSI Mount가 `AccessDenied`로 실패한다.
 

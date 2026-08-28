@@ -187,12 +187,16 @@ spec:
       ports:
         - port: 8082
           protocol: TCP
+        - port: 8083
+          protocol: TCP
     - from:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: commerce-api
       ports:
         - port: 8081
+          protocol: TCP
+        - port: 8083
           protocol: TCP
         - port: 8084
           protocol: TCP
@@ -201,7 +205,16 @@ spec:
             matchLabels:
               app.kubernetes.io/name: payment-api
       ports:
+        - port: 8081
+          protocol: TCP
         - port: 8082
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: queue-api
+      ports:
+        - port: 8081
           protocol: TCP
     - from:
         - namespaceSelector:
@@ -231,6 +244,13 @@ spec:
               app.kubernetes.io/name: commerce-api
       ports:
         - port: 8082
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: payment-api
+      ports:
+        - port: 8083
           protocol: TCP
     - to:
         - ipBlock:
@@ -269,6 +289,13 @@ spec:
         - port: 8084
           protocol: TCP
     - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: payment-api
+      ports:
+        - port: 8083
+          protocol: TCP
+    - to:
         - ipBlock:
             cidr: 10.24.0.0/16
       ports:
@@ -288,6 +315,13 @@ spec:
   policyTypes:
     - Egress
   egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: store-access-api
+      ports:
+        - port: 8081
+          protocol: TCP
     - to:
         - podSelector:
             matchLabels:
@@ -324,6 +358,13 @@ spec:
   policyTypes:
     - Egress
   egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: store-access-api
+      ports:
+        - port: 8081
+          protocol: TCP
     - to:
         - ipBlock:
             cidr: 10.24.0.0/16
