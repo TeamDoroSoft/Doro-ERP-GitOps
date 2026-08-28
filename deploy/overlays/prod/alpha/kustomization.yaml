@@ -83,11 +83,12 @@ patches:
       kind: Deployment
       name: payment-api
     patch: |-
-      # Payment must reload the new Commerce and Store Access direction Secrets.
+      # Payment must reload stable ConfigMap handoff acknowledgement changes and
+      # the new Commerce and Store Access direction Secrets.
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-config-revision: payment-handoff-v1
+          doro.minseok.click/runtime-config-revision: payment-handoff-terminal-ack-v2
           doro.minseok.click/runtime-secret-revision: complete-internal-hmac-directions-v1
   - target:
       kind: Deployment
@@ -322,6 +323,9 @@ patches:
       - op: add
         path: /data/PAYMENT_HANDOFF_ENABLED
         value: "true"
+      - op: add
+        path: /data/PAYMENT_HANDOFF_TERMINAL_ACKNOWLEDGEMENT
+        value: PT5S
       - op: add
         path: /data/PAYMENT_COMMERCE_EVENTS_QUEUE_URL
         value: https://sqs.ap-northeast-2.amazonaws.com/727646470302/doro-erp-prod-alpha-commerce-events.fifo
