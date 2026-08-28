@@ -36,6 +36,14 @@ GitOps 저장소의 Dockerfile을 사용하되 Build Context는 Service 저장�
 Flyway Image Version은 Service가 사용하는 `12.4.0`과 맞춘다. 각 Image는 해당 서비스의
 `db/migration` 디렉터리만 포함한다.
 
+기본 게시 경로는 Service 저장소의 `publish-migration-ecr.yml` 수동 Workflow다. Workflow는
+지정한 Service Revision을 검증한 뒤 네 Migration Image를 ECR에 게시하고, 네 Image가 모두
+확인된 경우에만 이 저장소의 Migration Tag를 갱신하는 Pull Request를 만든다. Pull Request
+병합은 Image 게시보다 뒤에 수행하며, 운영 Database 적용은 아래의 수동 Argo CD Sync Gate를
+유지한다.
+
+다음 명령은 Workflow를 사용할 수 없는 비상 상황의 수동 대체 절차다.
+
 ```bash
 cd ~/Doro-ERP-Service
 
@@ -59,6 +67,11 @@ done
 
 ECR Repository는 Immutable Tag를 사용하므로 같은 Tag를 덮어쓰지 않는다. Service Git SHA가
 바뀌면 새 `MIGRATION_TAG`를 만든다.
+
+Workflow와 수동 절차 모두 ECR 게시를 확인하기 전에
+`deploy/migrations/prod-alpha/kustomization.yaml`을 먼저 변경하지 않는다. 자동 Release는
+[`record-prod-alpha-migration-image.sh`](../scripts/record-prod-alpha-migration-image.sh)를 사용해
+ECR Tag와 Digest를 다시 확인하고 네 `newTag`를 같은 Service Revision으로 기록한다.
 
 ## 적용 순서
 
