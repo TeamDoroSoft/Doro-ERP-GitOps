@@ -65,16 +65,17 @@ patches:
         path: /spec/template/metadata/annotations
         value:
           doro.minseok.click/runtime-config-revision: queue-events-v1
+          doro.minseok.click/runtime-secret-revision: queue-to-store-access-v1
   - target:
       kind: Deployment
       name: store-access-api
     patch: |-
       # Stable Secret names require a Pod-template revision so the JVM reloads
-      # the newly mapped payment-to-store-access HMAC environment variable.
+      # newly mapped inbound HMAC environment variables.
       - op: add
         path: /spec/template/metadata/annotations
         value:
-          doro.minseok.click/runtime-secret-revision: payment-to-store-access-v1
+          doro.minseok.click/runtime-secret-revision: payment-and-queue-to-store-access-v1
   - target:
       kind: Deployment
       name: payment-api
