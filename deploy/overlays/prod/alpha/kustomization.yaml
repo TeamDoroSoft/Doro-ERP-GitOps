@@ -386,22 +386,22 @@ patches:
 images:
   - name: doro-erp-edge
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-edge
-    digest: sha256:f9e63cfa58d2847ea009ebfb32de9169c73b506a960f92e1b30bb03f966dfa4d # source-revision: 6c8a1ef20442f0cb12fc2267fc7afba1622588ff
+    digest: sha256:6e3c9f1fc40bf15ff5a0e32f31f474a6a9f09303b530263ca63a32f492d170b8 # source-revision: b4c87d9a999b7e25c9d7832f9653b1374193883d
   - name: doro-erp-store-access
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-store-access
-    digest: sha256:4631fc91f18ad886d21b8857d25e0629075670888f80445c813eab4972b4ad4b # source-revision: 6c8a1ef20442f0cb12fc2267fc7afba1622588ff
+    digest: sha256:2b11c8a74d5bf8dabfc4b2f6a711eaba4009c7f5a961be817c1a498aea712d77 # source-revision: b4c87d9a999b7e25c9d7832f9653b1374193883d
   - name: doro-erp-commerce
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-commerce
-    digest: sha256:8853eba5cc141cb04ef08b15062080e39b0d48c53b67ef31367852ca260ed429 # source-revision: 6c8a1ef20442f0cb12fc2267fc7afba1622588ff
+    digest: sha256:267d49032da73805af319a446e0facab12bb76a5f16fca90eec16d127ecac801 # source-revision: b4c87d9a999b7e25c9d7832f9653b1374193883d
   - name: doro-erp-payment
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-payment
-    digest: sha256:4f5e4c6cebaf86209155f16194dec1ad081229aa2fb548319c546f4f38523b3e # source-revision: 6c8a1ef20442f0cb12fc2267fc7afba1622588ff
+    digest: sha256:4f5e4c6cebaf86209155f16194dec1ad081229aa2fb548319c546f4f38523b3e # source-revision: b4c87d9a999b7e25c9d7832f9653b1374193883d
   - name: doro-erp-queue
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-queue
-    digest: sha256:1624bd4d1a69dda1cb30962a712d1642c3b3a59c47b6733a58153463fd8c4aa5 # source-revision: 6c8a1ef20442f0cb12fc2267fc7afba1622588ff
+    digest: sha256:97d9e89542f8bd9f41b0a6d6d1077f2492ed48354ea3d657eb2c89c6ef0c5f9f # source-revision: b4c87d9a999b7e25c9d7832f9653b1374193883d
   - name: doro-erp-audit
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-audit
-    digest: sha256:d318f6cc15306a5b32574484ada539448f12eddf71899ab939cc47f4496889e5 # source-revision: 6c8a1ef20442f0cb12fc2267fc7afba1622588ff
+    digest: sha256:d318f6cc15306a5b32574484ada539448f12eddf71899ab939cc47f4496889e5 # source-revision: b4c87d9a999b7e25c9d7832f9653b1374193883d
   - name: doro-erp-frontend
     newName: 727646470302.dkr.ecr.ap-northeast-2.amazonaws.com/doro-erp-frontend
     digest: sha256:7325e152c6a60734eb450600b3514e1049fb2ff7397f80d2aa88d6f03495719d # source-revision: b4829e8b12e659ae731f3c6797db98eb83e06c5c
