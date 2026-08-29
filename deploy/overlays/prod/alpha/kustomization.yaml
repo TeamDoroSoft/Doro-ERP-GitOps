@@ -267,7 +267,7 @@ patches:
         value: PT1S
       - op: add
         path: /data/COMMERCE_PAYMENT_HANDOFF_READ_TIMEOUT
-        value: PT2S
+        value: PT10S
       - op: add
         path: /data/COMMERCE_STORE_ACCESS_ALLOW_CLUSTER_SERVICE_HTTP
         value: "true"
